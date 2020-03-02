@@ -10,8 +10,4 @@
 
 ## start
 
-git init
-
-git remote add origin https://github.com/SimonGH0STRiley/AirConditioningManagementSystem.git
-
 git clone git@github.com:SimonGH0STRiley/AirConditioningManagementSystem.git
