@@ -1,0 +1,61 @@
+{
+    "name": "front-end",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "serve": "vue-cli-service serve",
+        "build": "vue-cli-service build",
+        "lint": "vue-cli-service lint"
+    },
+    "dependencies": {
+        "bootstrap": "^4.4.1",
+        "bootstrap-vue": "^2.1.0",
+        "core-js": "^2.6.5",
+        "mysql": "^2.18.1",
+        "vue": "^2.6.10",
+        "ws": "^7.2.5"
+    },
+    "devDependencies": {
+        "@babel/polyfill": "^7.7.0",
+        "@vue/cli-plugin-babel": "^3.12.0",
+        "@vue/cli-plugin-eslint": "^3.12.0",
+        "@vue/cli-service": "^3.12.0",
+        "babel-eslint": "^10.0.1",
+        "bootstrap": "^4.3.1",
+        "eslint": "^5.16.0",
+        "eslint-plugin-vue": "^5.0.0",
+        "mutationobserver-shim": "^0.3.3",
+        "popper.js": "^1.16.0",
+        "portal-vue": "^2.1.6",
+        "sass": "^1.19.0",
+        "sass-loader": "^8.0.0",
+        "vue-cli-plugin-bootstrap-vue": "^0.6.0",
+        "vue-template-compiler": "^2.6.10"
+    },
+    "eslintConfig": {
+        "root": true,
+        "env": {
+            "node": true
+        },
+        "extends": [
+            "plugin:vue/essential",
+            "eslint:recommended"
+        ],
+        "rules": {
+            "no-console":"off",
+            "no-unused-vars": "off"
+        },
+        "parserOptions": {
+            "parser": "babel-eslint"
+        }
+    },
+    "postcss": {
+        "plugins": {
+            "autoprefixer": {}
+        }
+    },
+    "browserslist": [
+        "> 1%",
+        "last 2 versions"
+    ]
+}

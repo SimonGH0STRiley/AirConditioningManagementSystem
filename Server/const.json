@@ -1,0 +1,14 @@
+{
+    "RoomCapacity": {
+        "value": 128,
+        "type": "Number"
+    },
+    "ACCapacity": {
+        "value": 64,
+        "type": "Number"
+    },
+    "WaitTime": {
+        "value": 30,
+        "type": "Number"
+    }
+}
