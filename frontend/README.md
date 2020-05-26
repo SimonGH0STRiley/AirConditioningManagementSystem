@@ -46,7 +46,7 @@ To know more, please view the official site of vue at [传送门](https://cli.vu
 Please get started with the following commands:
 ```
 vue add bootstrap-vue
-cd front-end
+cd frontend
 npm install
 npm run serve
 ```
