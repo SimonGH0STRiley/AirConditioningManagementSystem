@@ -74,8 +74,12 @@ WSGI_APPLICATION = 'AirConditioningManagementSystem.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'AirConditioningManagementSystem',
+        'USER': 'root',
+        'PASSWORD': 'some_pass',
+        'HOST': '103.105.49.174',
+        'PORT': 3306,
     }
 }
 

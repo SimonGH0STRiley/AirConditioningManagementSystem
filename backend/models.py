@@ -4,8 +4,8 @@ from django.utils import timezone
 # Create your models here.
 # 制冷制热模式, 默认制冷
 temp_mode_choice = (
-        (1, '制冷模式'),
-        (-1, '制热模式'),
+    (1, '制冷模式'),
+    (-1, '制热模式'),
 )
 # 送风模式，风速
 blow_mode_choice = (
@@ -64,7 +64,7 @@ class Room(models.Model):
         (2, '挂起'),
     )
     room_id = models.CharField('房间号', max_length=64, unique=True, primary_key=True)
-    room_state = models.SmallIntegerField(choices=room_state_choice, max_length=64, default=0, verbose_name="房间从控机状态")
+    room_state = models.SmallIntegerField(choices=room_state_choice, default=0, verbose_name="房间从控机状态")
     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
     current_temp = models.IntegerField('当前温度')
@@ -79,18 +79,19 @@ class TemperatureSensor(models.Model):
     init_temp = models.FloatField('初始温度')
     current_temp = models.FloatField('当前温度')
     last_update = models.TimeField('上次更新时间', default=timezone.now())
-    def update_current_temp(self, current_time = timezone.now()):
+
+    def update_current_temp(self, current_time=timezone.now()):
         room = Room.objects.get(pk=self.room_id)
         # current_time = 
         delta_update_time = current_time - self.last_update
-        temp_change_direction = room.temp_mode  
+        temp_change_direction = room.temp_mode
         if room.get_room_state_display() != '运行':
             delta_temp_change = default_temp_changing * delta_update_time.total_seconds()
             self.current_temp += temp_change_direction * delta_temp_change
             # 房间回温算法变化到室温为止
             if (temp_change_direction == 1 and self.current_temp > self.init_temp) or \
-                (temp_change_direction == -1 and self.current_temp < self.init_temp):
-                self.current_temp = init_temp 
+                    (temp_change_direction == -1 and self.current_temp < self.init_temp):
+                self.current_temp = init_temp
         else:
             delta_temp_change = temp_change_speed_array[room.blow_mode][0] * delta_update_time.total_seconds()
             self.current_temp -= temp_change_direction * delta_temp_change
@@ -201,4 +202,3 @@ class MonthReport(Report):
     # report_month = models.DateField('月报表所属月份')
     daily_power_comsumption = models.FloatField('每日总用电度数')
     daily_fee = models.FloatField('每日空调总费用')
-
