@@ -41,7 +41,7 @@ class ScheduleTests(TestCase):
         self.assertEqual(rooms.filter(blow_mode=1).count(), 3)
         self.assertEqual(rooms.filter(room_id=3)[0].room_state, 1)
 
-
+'''
 class TemperatureSensorTests(TestCase):
     def test_update_current_temp(self):
         admin = ACAdministrator()
@@ -84,7 +84,7 @@ class TemperatureSensorTests(TestCase):
         room = Room.objects.get(pk='1')
         self.assertIs(room.room_state == 0, True)
 
-        '''
+        
         guest.changeFanSpeed(2)
         two_minute_later = current_time + datetime.timedelta(minutes=2)
         temp_sensor.update_current_temp(current_time=two_minute_later)

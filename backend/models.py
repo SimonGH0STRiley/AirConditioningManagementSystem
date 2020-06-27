@@ -329,7 +329,7 @@ class CentralAirConditioner(models.Model):
 
         for satisfy_request in waiting_request:
             # 尚未超过负载能力，满足送风请求
-            if requestQueue.objects.all().filter(room_state=2).count() < self.max_load:            
+            if requestQueue.objects.all().filter(room_state=1).count() < self.max_load:            
                 #  与设定制冷制热模式一致
                 if satisfy_request.temp_mode == self.temp_mode:
                     send_air(satisfy_request)
