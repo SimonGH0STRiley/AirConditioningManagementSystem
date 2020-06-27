@@ -1,8 +1,6 @@
 from django.db import models
 from django.utils import timezone
 
-# Create your models here.
-# Create your models here.
 # 制冷制热模式, 默认制冷
 temp_mode_choice = (
         (1, '制冷模式'),
@@ -41,7 +39,7 @@ class Personel(models.Model):
     name = models.CharField(max_length=128, unique=True)
     password = models.CharField(max_length=256, default='')
     c_time = models.DateTimeField(auto_now_add=True)  # 角色创建时间，用于排序管理
-
+    
     class Meta:
         ordering = ["-c_time"]  # 按创建时间降序排序, 优先显示新创建的
         abstract = True
@@ -78,14 +76,40 @@ class Tenant(models.Model):
     name = models.CharField(max_length=128, unique=True)
     password = models.CharField(max_length=256, default='')
     c_time = models.DateTimeField(auto_now_add=True)   # 角色创建时间，用于排序管理
-    # room_id = models.CharField('房间号', max_length=64)
-    # date_in = models.DateField('入住日期')
-    # date_out = models.DateField('登出日期')
+    # room_id = models.CharField('房间号', max_length=64, primary_key=True)
+    # date_in = models.DateField('入住日期', null=True)
+    # date_out = models.DateField('登出日期', null=True)
 
     class Meta:
         ordering = ["-c_time"]                         # 按创建时间降序排序, 优先显示新创建的
         verbose_name = "房客"                          # 可读性佳的名字
         verbose_name_plural = "房客"                   # 复数形式
+
+class Guest(Tenant):
+    room_id = models.CharField('房间号', max_length=64, primary_key=True)
+    date_in = models.DateField('入住日期', null=True)
+    date_out = models.DateField('登出日期', null=True)
+    def initiateTenant():
+        pass
+    def requestOn(self):
+        room = Room.objects.get(pk=self.room_id)
+        room.room_state = 1
+        room.save()
+
+    def changeTargetTemp(self, target_temp):
+        room = Room.objects.get(pk=self.room_id)
+        room.target_temp = target_temp
+        room.save()
+
+    def changeFanSpeed(self, fan_speed):
+        room = Room.objects.get(pk=self.room_id)
+        room.blow_mode = fan_speed
+        room.save()
+        
+    def requestOff(self):
+        room = Room.objects.get(pk=self.room_id)
+        room.room_state = 0
+        room.save()
 
 
 class TemperatureSensor(models.Model):
@@ -103,8 +127,8 @@ class TemperatureSensor(models.Model):
             self.current_temp += temp_change_direction * delta_temp_change
             # 房间回温算法变化到室温为止
             if (temp_change_direction == 1 and self.current_temp > self.init_temp) or \
-                (temp_change_direction == -1 and self.current_temp < self.init_temp):
-                self.current_temp = init_temp
+                    (temp_change_direction == -1 and self.current_temp < self.init_temp):
+                self.current_temp = self.init_temp
         else:
             delta_temp_change = temp_change_speed_array[room.blow_mode][0] * delta_update_time.total_seconds()
             self.current_temp -= temp_change_direction * delta_temp_change
@@ -119,7 +143,7 @@ class Room(models.Model):
     )
     room_id = models.CharField('房间号', max_length=64, unique=True, primary_key=True)
     room_state = models.SmallIntegerField(choices=room_state_choice, default=0, verbose_name="房间从控机状态")
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
+    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
     current_temp = models.IntegerField('当前温度')
     target_temp = models.IntegerField('目标温度')
