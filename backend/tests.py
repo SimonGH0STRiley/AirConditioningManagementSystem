@@ -10,7 +10,7 @@ class TemperatureSensorTests(TestCase):
         current_time = timezone.now()
         room = Room(
             room_id='房间一', room_state=0, temp_mode=1, blow_mode=1,
-            current_temp=32, target_temp=27, fee_rate=1, fee=0, duration=0
+            current_temp=32, target_temp=27, fee=0, duration=0
         )
         room.save()
         temp_sensor = TemperatureSensor(
