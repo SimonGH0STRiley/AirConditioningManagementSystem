@@ -316,7 +316,7 @@ class CentralAirConditioner(models.Model):
         
 
 class RequestRecord(models.Model):
-    request_id = models.BigAutoField(primaryKey=True)
+    request_id = models.BigAutoField(primary_key=True)
     room_id = models.CharField('房间号', max_length=64)
     room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
@@ -326,8 +326,8 @@ class RequestRecord(models.Model):
 
 
 class ServiceRecord(models.Model):
-    service_id = models.BigAutoField(primaryKey=True)
-    RR_id = models.ForeignKey("RequestRecord", on_delete=models.CASCADE())
+    service_id = models.BigAutoField(primary_key=True)
+    RR_id = models.ForeignKey("RequestRecord", on_delete=models.CASCADE)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
