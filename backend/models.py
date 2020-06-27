@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 import time
 import datetime
@@ -21,21 +22,6 @@ room_state_choice = (
     (1, '运行'),
     (2, '挂起'),
 )
-
-
-class ServeQueue(models.Model):
-    queue_id = models.CharField('服务队列号', max_length=64, unique=True)
-    guest_id = models.CharField('房客编号', max_length=64)
-    room_id = models.CharField('房间号', max_length=64)
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
-    start_time = models.DateTimeField('开始服务时间')
-    end_time = models.DateTimeField('结束服务时间')
-    fee_duration = models.FloatField('服务时长(分钟)')
-    fee_rate = models.FloatField('费率')
-    power_comsumption = models.FloatField('用电度数')
-    fee = models.FloatField('费用')
-
 
 # 浮点误差
 eps = 1e-6
@@ -69,17 +55,6 @@ class Personel(models.Model):
     class Meta:
         ordering = ["-c_time"]  # 按创建时间降序排序, 优先显示新创建的
         abstract = True
-
-
-class requestQueue(models.Model):
-    room_id = models.CharField('房间号', max_length=64, primary_key=True)
-    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
-    # target_temp = models.IntegerField('目标温度')
-    request_timestamp = models.TimeField('请求送风时间戳', auto_now_add=True)
-    air_timestamp = models.TimeField('开始送风时间戳', null=True)
-    service_duration = models.IntegerField('当前服务时长(秒)', default=0)
 
 
 class ACAdministrator(Personel):
@@ -130,6 +105,20 @@ class Waiter(Personel):
     class Meta:
         verbose_name = "前台服务员"  # 可读性佳的名字
         verbose_name_plural = "前台服务员"  # 复数形式
+
+    def printRDR(self, room_id, date_in, date_out):
+        records = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out))
+        return records
+
+    def printInvoice(self, room_id, date_in, date_out):
+        total_fee = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out)).aggregate(Sum("fee")).get('fee__sum')
+        invoice = {
+            "room_id": room_id,
+            "total_fee": total_fee,
+            "date_in": date_in,
+            "date_out": date_out
+        }
+        return invoice
 
 
 class Manager(Personel):
@@ -312,24 +301,21 @@ class CentralAirConditioner(models.Model):
                         pass
 
 
-            
-        
-
 class RequestRecord(models.Model):
-    request_id = models.BigAutoField(primaryKey=True)
     room_id = models.CharField('房间号', max_length=64)
-    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
+    room_state = models.SmallIntegerField("房间送风状态", choices=room_state_choice, default=2)
+    temp_mode = models.SmallIntegerField('送风模式', choices=temp_mode_choice, default=2)
     start_temp = models.IntegerField('初始温度')
     target_temp = models.IntegerField('目标温度')
     request_time = models.DateTimeField()
 
 
 class ServiceRecord(models.Model):
-    service_id = models.BigAutoField(primaryKey=True)
-    RR_id = models.ForeignKey("RequestRecord", on_delete=models.CASCADE())
+    RR = models.ForeignKey("RequestRecord", on_delete=models.CASCADE)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     power_comsumption = models.FloatField('用电度数')
     ntemp = models.IntegerField('当前温度')
+    fee_rate = models.FloatField('费率', choices=feerate_choice, default=2)
+    fee = models.FloatField()
