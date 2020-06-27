@@ -64,7 +64,7 @@ class Room(models.Model):
     )
     room_id = models.CharField('房间号', max_length=64, unique=True, primary_key=True)
     room_state = models.SmallIntegerField(choices=room_state_choice, default=0, verbose_name="房间从控机状态")
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
+    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
     current_temp = models.IntegerField('当前温度')
     target_temp = models.IntegerField('目标温度')
@@ -90,7 +90,7 @@ class TemperatureSensor(models.Model):
             # 房间回温算法变化到室温为止
             if (temp_change_direction == 1 and self.current_temp > self.init_temp) or \
                     (temp_change_direction == -1 and self.current_temp < self.init_temp):
-                self.current_temp = init_temp
+                self.current_temp = self.init_temp
         else:
             delta_temp_change = temp_change_speed_array[room.blow_mode][0] * delta_update_time.total_seconds()
             self.current_temp -= temp_change_direction * delta_temp_change
@@ -101,6 +101,28 @@ class Guest(models.Model):
     room_id = models.CharField('房间号', max_length=64)
     date_in = models.DateField('入住日期')
     date_out = models.DateField('登出日期')
+
+    def initiateTenant():
+        pass
+    def requestOn(self):
+        room = Room.objects.get(pk=self.room_id)
+        room.room_state = 1
+        room.save()
+
+    def changeTargetTemp(self, target_temp):
+        room = Room.objects.get(pk=self.room_id)
+        room.target_temp = target_temp
+        room.save()
+
+    def changeFanSpeed(self, fan_speed):
+        room = Room.objects.get(pk=self.room_id)
+        room.blow_mode = fan_speed
+        room.save()
+        
+    def requestOff(self):
+        room = Room.objects.get(pk=self.room_id)
+        room.room_state = 0
+        room.save()
 
 
 class CentralAirConditioner(models.Model):
