@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+import time
 
 # Create your models here.
 # 制冷制热模式, 默认制冷
@@ -71,12 +72,13 @@ class ACAdministrator(Personel):
         CentralAirConditioner.ac_state = 'ready'
         CentralAirConditioner.save()
 
-    def checkroomstate(self, list_room=[]):
-        return Room.objects.all()
-
-        # 缺，从数据库还是哪里获取这些数据
-        # 返回该房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
-        # (续)models.Room.blow_mode, models.Room.fee_rate, models.Room.fee, models.Room.duration]
+    def checkroomstate(self):
+        while CentralAirConditioner.ac_state == 'ready':
+            info = Room.objects.all()
+            time.sleep(60)
+            return info
+            # 前端每分钟刷新显示房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
+            # (续)models.Room.blow_mode, models.Room.fee_rate, models.Room.fee, models.Room.duration]
 
     class Meta:
         verbose_name = "空调管理员"  # 可读性佳的名字
@@ -203,7 +205,6 @@ class CentralAirConditioner(models.Model):
     feerate_H = models.FloatField('高风费率')
     feerate_M = models.FloatField('中风费率')
     feerate_L = models.FloatField('低风费率')
-
 #
 #
 #
@@ -232,6 +233,8 @@ class CentralAirConditioner(models.Model):
 #     fee = models.FloatField('费用')
 #
 #
+
+
 class Report(models.Model):
     guest_id = models.CharField('房客编号', max_length=64)
     room_id = models.CharField('房间号', max_length=64)
