@@ -421,36 +421,36 @@ class CentralAirConditioner(models.Model):
 # #     fee = models.FloatField('费用')
 # #
 # #
-# # class Report(models.Model):
-# #     guest_id = models.CharField('房客编号', max_length=64)
-# #     room_id = models.CharField('房间号', max_length=64)
-# #     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-# #     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
-# #     start_time = models.DateTimeField('开始服务时间')
-# #     end_time = models.DateTimeField('结束服务时间')
-# #     fee_duration = models.FloatField('服务时长(分钟)')
-# #     request_time = models.DateTimeField('发送请求时间')
-# #     end_request_time = models.DateTimeField('停止请求时间')
-# #     request_num = models.IntegerField('发送请求次数')
-# #     first_temp = models.IntegerField('初始温度')
-# #     target_temp = models.IntegerField('目标温度')
-# #     power_comsumption = models.FloatField('用电度数')
-# #     fee = models.FloatField('费用')
-# #
-# #
-# # class DayReport(Report):
-# #     # report_date = models.DateField('日报表所属日期')
-# #     day_power_comsumption = models.FloatField('每日总用电度数')
-# #     day_fee = models.FloatField('每日空调总费用')
-# #
-# #
-# # class WeekReport(Report):
-# #     # report_week = models.DateField('周报表所属周次')
-# #     week_power_comsumption = models.FloatField('每日总用电度数')
-# #     week_fee = models.FloatField('每日空调总费用')
-# #
-# #
-# # class MonthReport(Report):
-# #     # report_month = models.DateField('月报表所属月份')
-# #     daily_power_comsumption = models.FloatField('每日总用电度数')
-# #     daily_fee = models.FloatField('每日空调总费用')
+class Report(models.Model):
+    guest_id = models.CharField('房客编号', max_length=64)
+    room_id = models.CharField('房间号', max_length=64)
+    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
+    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
+    start_time = models.DateTimeField('开始服务时间')
+    end_time = models.DateTimeField('结束服务时间')
+    fee_duration = models.FloatField('服务时长(分钟)')
+    request_time = models.DateTimeField('发送请求时间')
+    end_request_time = models.DateTimeField('停止请求时间')
+    request_num = models.IntegerField('发送请求次数')
+    first_temp = models.IntegerField('初始温度')
+    target_temp = models.IntegerField('目标温度')
+    power_comsumption = models.FloatField('用电度数')
+    fee = models.FloatField('费用')
+
+
+class DayReport(Report):
+    # report_date = models.DateField('日报表所属日期')
+    day_power_comsumption = models.FloatField('每日总用电度数')
+    day_fee = models.FloatField('每日空调总费用')
+
+
+class WeekReport(Report):
+    # report_week = models.DateField('周报表所属周次')
+    week_power_comsumption = models.FloatField('每日总用电度数')
+    week_fee = models.FloatField('每日空调总费用')
+
+
+class MonthReport(Report):
+    # report_month = models.DateField('月报表所属月份')
+    daily_power_comsumption = models.FloatField('每日总用电度数')
+    daily_fee = models.FloatField('每日空调总费用')
