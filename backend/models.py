@@ -78,8 +78,8 @@ class requestQueue(models.Model):
     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
     # target_temp = models.IntegerField('目标温度')
-    request_timestamp = models.TimeField('请求送风时间戳', auto_now_add=True)
-    air_timestamp = models.TimeField('开始送风时间戳', null=True)
+    request_timestamp = models.DateTimeField('请求送风时间戳', auto_now_add=True)
+    air_timestamp = models.DateTimeField('开始送风时间戳', null=True)
     service_duration = models.IntegerField('当前服务时长(秒)', default=0)
 
 
@@ -205,9 +205,11 @@ class TemperatureSensor(models.Model):
         '房间号', max_length=64, unique=True, primary_key=True)
     init_temp = models.FloatField('初始温度')
     current_temp = models.FloatField('当前温度')
-    last_update = models.TimeField('上次更新时间', default=timezone.now())
+    last_update = models.DateTimeField('上次更新时间', default=timezone.now())
 
-    def update_current_temp(self, current_time=timezone.now()):
+    def update_current_temp(self, current_time=None):
+        if current_time is None:
+            current_time = timezone.now()
         room = Room.objects.get(pk=self.room_id)
         # current_time =
         delta_update_time = current_time - self.last_update
@@ -246,7 +248,7 @@ class Room(models.Model):
         new_air_request.save()
 
     def cancelAir(self):
-        old_air_request = requestQueue.objects.get_object(pk=self.room_id)
+        old_air_request = requestQueue.objects.get(pk=self.room_id)
         old_air_request.delete()
 
     def auto_ajust_temp(self):
@@ -290,7 +292,7 @@ class CentralAirConditioner(models.Model):
     def schedule(self):
 
         def send_air(satisfy_request):
-            satisfy_room = Room.objects.get_object(pk=satisfy_request.room_id)  # 取得房间
+            satisfy_room = Room.objects.get(pk=satisfy_request.room_id)  # 取得房间
             satisfy_room.room_state = 1
             satisfy_room.save()
 
@@ -300,7 +302,7 @@ class CentralAirConditioner(models.Model):
 
 
         def cancel_air(weaker_request):
-            weaker_room = Room.objects.get_object(pk=weaker_request.room_id)
+            weaker_room = Room.objects.get(pk=weaker_request.room_id)
             weaker_room.room_state = 2
             weaker_room.save()
 
@@ -329,20 +331,20 @@ class CentralAirConditioner(models.Model):
             # 尚未超过负载能力，满足送风请求
             if current_request_cnt <= self.max_load:            
                 #  与设定制冷制热模式一致
-                if satisfy_room.temp_mode == self.temp_mode:
+                if satisfy_request.temp_mode == self.temp_mode:
                     send_air(satisfy_request)
                     
                     
         else: #  超过负载能力，需要进行调度
             for may_satisfy_request in waiting_request:
                 current_time = timezone.now()
-                weaker_request = serving_request.filter(blow_mode__ls=may_satisfy_request.blow_mode)
+                weaker_request = serving_request.filter(blow_mode__lt=may_satisfy_request.blow_mode)
                 if len(weaker_request) > 0:  # 优先级调度，先满足高风速请求
                     weaker_request = weaker_request[0]  # 挑选出一个低风速请求
                     cancel_air(weaker_request)
                     send_air(may_satisfy_request)
                 else:
-                    equal_request = serving_request.filer(blow_mode=may_satisfy_request.blow_mode).order_by('-service_duration')                    
+                    equal_request = serving_request.filter(blow_mode=may_satisfy_request.blow_mode).order_by('-service_duration')                    
                     if len(equal_request) > 0 and may_satisfy_request.request_timestamp <= current_time - datetime.timedelta(seconds=self.waiting_duration):  # 时间片调度
                         equal_request = equal_request[0]  # 关掉服务时间最长的
                         cancel_air(weaker_request)
