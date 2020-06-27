@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 import time
 import datetime
+from django.db.models import F
 
 # Create your models here.
 # 制冷制热模式, 默认制冷
@@ -271,9 +272,30 @@ class CentralAirConditioner(models.Model):
 
     def billing(self):
         pass
-
     # 需要每秒钟运行
     def schedule(self):
+
+        def send_air(satisfy_request):
+            satisfy_room = Room.objects.get_object(pk=satisfy_request.room_id)  # 取得房间
+            satisfy_room.room_state = 1
+            satisfy_room.save()
+
+            satisfy_request.room_state = 1  # 开始送风
+            satisfy_request.air_timestamp = timezone.now()  # 送风开始时间
+            satisfy_request.save()
+
+
+        def cancel_air(weaker_request):
+            weaker_room = Room.objects.get_object(pk=weaker_request.room_id)
+            weaker_room.room_state = 2
+            weaker_room.save()
+
+            weaker_request.room_state = 2  # 停止送风
+            weaker_request.request_timestamp = timezone.now()  # 重新计时
+            weaker_request.save()
+            # 待补充：在别的地方记录送风结束时间
+
+
         all_rooms = Room.objects.all()
         all_requests = requestQueue.objects.all()
         current_request_cnt = len(all_requests)
@@ -281,35 +303,36 @@ class CentralAirConditioner(models.Model):
         serving_request = all_requests.filter(room_state=1)
         current_load = len(serving_request)
 
+        # 更新服务时间
+        serving_request.update(service_duration=F('service_duration')+1)
+
 
         # 全部送风请求都已满足，不需要调度
         if current_request_cnt <= current_load:
             return 
 
-        # 尚未超过负载能力，满足送风请求
-        if current_request_cnt <= self.max_load:
-            # 正处于待机状态，送风
-            for satisfy_request in waiting_request:
-                satisfy_room = Room.objects.get_object(pk = satisfy_request.room_id)
+        for satisfy_request in waiting_request:
+            # 尚未超过负载能力，满足送风请求
+            if current_request_cnt <= self.max_load:            
                 #  与设定制冷制热模式一致
                 if satisfy_room.temp_mode == self.temp_mode:
-                    satisfy_room.room_state = 1
-                    satisfy_request.room_state = 1
-                    satisfy_request.air_timestamp = timezone.now()
-                    satisfy_room.save()
+                    send_air(satisfy_request)
+                    
+                    
         else: #  超过负载能力，需要进行调度
             for may_satisfy_request in waiting_request:
+                current_time = timezone.now()
                 weaker_request = serving_request.filter(blow_mode__ls=may_satisfy_request.blow_mode)
                 if len(weaker_request) > 0:  # 优先级调度，先满足高风速请求
                     weaker_request = weaker_request[0]  # 挑选出一个低风速请求
-                    weaker_request.room_state = 2  # 停止送风
-                    weaker_request.request_timestamp = timezone.now()  # 重新计时
-                    weaker_request.save()
+                    cancel_air(weaker_request)
+                    send_air(may_satisfy_request)
                 else:
-                    equal_request = serving_request.filer(blow_mode=may_satisfy_request.blow_mode)
-                    current_time = timezone.now()
+                    equal_request = serving_request.filer(blow_mode=may_satisfy_request.blow_mode).order_by('-service_duration')                    
                     if len(equal_request) > 0 and may_satisfy_request.request_timestamp <= current_time - datetime.timedelta(seconds=self.waiting_duration):  # 时间片调度
-                        pass
+                        equal_request = equal_request[0]  # 关掉服务时间最长的
+                        cancel_air(weaker_request)
+                        send_air(may_satisfy_request)
 
 
             
@@ -380,8 +403,8 @@ class Report(models.Model):
 
 
 class ServiceRecord(models.Model):
-    service_id = models.BigAutoField(primaryKey=True)
-    RR_id = models.ForeignKey("RequestRecord", on_delete=models.CASCADE())
+    service_id = models.BigAutoField(primary_key=True)
+    RR_id = models.ForeignKey("RequestRecord", on_delete=models.CASCADE)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
