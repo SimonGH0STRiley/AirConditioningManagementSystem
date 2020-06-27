@@ -29,5 +29,6 @@ urlpatterns = [
     path('waiterview/', views.waiterview),
     path('managerview/', views.managerview),
     path('tenantview/', views.tenantview),
+    path('test/',views.test)
     # path('test/', TemplateView.as_view(template_name="test.html")),
 ]

@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
+import time
 
-# Create your models here.
 # Create your models here.
 # 制冷制热模式, 默认制冷
 temp_mode_choice = (
@@ -103,12 +103,12 @@ class ACAdministrator(Personel):
         CentralAirConditioner.ac_state = 'ready'
         CentralAirConditioner.save()
 
-    def checkroomstate(self, list_room=[]):
-        return Room.objects.all()
-
-
-            # 缺，从数据库还是哪里获取这些数据
-            # 返回该房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
+    def checkroomstate(self):
+        while CentralAirConditioner.ac_state == 'ready':
+            info = Room.objects.all()
+            time.sleep(60)
+            return info
+            # 前端每分钟刷新显示房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
             # (续)models.Room.blow_mode, models.Room.fee_rate, models.Room.fee, models.Room.duration]
 
     class Meta:
@@ -178,11 +178,13 @@ class Tenant(models.Model):
 
 
 class TemperatureSensor(models.Model):
-    room_id = models.CharField('房间号', max_length=64, unique=True, primary_key=True)
+    room_id = models.CharField(
+        '房间号', max_length=64, unique=True, primary_key=True)
     init_temp = models.FloatField('初始温度')
     current_temp = models.FloatField('当前温度')
     last_update = models.TimeField('上次更新时间', default=timezone.now())
-    def update_current_temp(self, current_time = timezone.now()):
+
+    def update_current_temp(self, current_time=timezone.now()):
         room = Room.objects.get(pk=self.room_id)
         # current_time =
         delta_update_time = current_time - self.last_update
@@ -195,16 +197,21 @@ class TemperatureSensor(models.Model):
                     (temp_change_direction == -1 and self.current_temp < self.init_temp):
                 self.current_temp = self.init_temp
         else:
-            delta_temp_change = temp_change_speed_array[room.blow_mode][0] * delta_update_time.total_seconds()
+            delta_temp_change = temp_change_speed_array[room.blow_mode][0] * \
+                delta_update_time.total_seconds()
             self.current_temp -= temp_change_direction * delta_temp_change
         self.last_update = current_time
 
 
 class Room(models.Model):
-    room_id = models.CharField('房间号', max_length=64, unique=True, primary_key=True)
-    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间从控机状态")
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
+    room_id = models.CharField(
+        '房间号', max_length=64, unique=True, primary_key=True)
+    room_state = models.SmallIntegerField(
+        choices=room_state_choice, default=0, verbose_name="房间从控机状态")
+    temp_mode = models.SmallIntegerField(
+        '制冷制热模式', choices=temp_mode_choice, default=1)
+    blow_mode = models.SmallIntegerField(
+        '送风模式', choices=blow_mode_choice, default=1)
     current_temp = models.IntegerField('当前温度')
     target_temp = models.IntegerField('目标温度', default=default_temp)
     fee_rate = models.FloatField('费率')
@@ -240,8 +247,10 @@ class CentralAirConditioner(models.Model):
         ('none', '备用'),
     )
 
-    ac_state = models.CharField(choices=ac_state_choice, max_length=64, default='close', verbose_name="中央空调状态")
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
+    ac_state = models.CharField(
+        choices=ac_state_choice, max_length=64, default='close', verbose_name="中央空调状态")
+    temp_mode = models.SmallIntegerField(
+        '制冷制热模式', choices=temp_mode_choice, default=0)
     temp_highlimit = models.IntegerField('温控范围最高温')
     temp_lowlimit = models.IntegerField('温控范围最低温')
     default_temp = models.IntegerField('缺省温度')
@@ -297,8 +306,10 @@ class ServeQueue(models.Model):
 class Report(models.Model):
     guest_id = models.CharField('房客编号', max_length=64)
     room_id = models.CharField('房间号', max_length=64)
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
+    temp_mode = models.SmallIntegerField(
+        '制冷制热模式', choices=temp_mode_choice, default=0)
+    blow_mode = models.SmallIntegerField(
+        '送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField('开始服务时间')
     end_time = models.DateTimeField('结束服务时间')
     fee_duration = models.FloatField('服务时长(分钟)')
@@ -309,21 +320,3 @@ class Report(models.Model):
     target_temp = models.IntegerField('目标温度')
     power_comsumption = models.FloatField('用电度数')
     fee = models.FloatField('费用')
-
-
-class DayReport(Report):
-    # report_date = models.DateField('日报表所属日期')
-    day_power_comsumption = models.FloatField('每日总用电度数')
-    day_fee = models.FloatField('每日空调总费用')
-
-
-class WeekReport(Report):
-    # report_week = models.DateField('周报表所属周次')
-    week_power_comsumption = models.FloatField('每日总用电度数')
-    week_fee = models.FloatField('每日空调总费用')
-
-
-class MonthReport(Report):
-    # report_month = models.DateField('月报表所属月份')
-    daily_power_comsumption = models.FloatField('每日总用电度数')
-    daily_fee = models.FloatField('每日空调总费用')
