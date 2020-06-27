@@ -81,7 +81,7 @@ DATABASES = {
         'HOST': '103.105.49.174',
         'PORT': 3306,
         'OPTIONS': {'charset': 'utf8mb4'},
-        'TEST':{
+        'TEST': {
             'NAME': 'test_AirConditioningManagementSystem',
             'CHARSET': 'utf8mb4',
         },

@@ -1,10 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, HttpResponse
 from django.shortcuts import redirect
+
+from backend.waiter import WaiterRegister
 from . import forms
 from . import models
+
+
 # # Create your views here.
-
-
 def index(request):
     if not request.session.get('is_login', None):
         return redirect('/login/')
@@ -12,7 +14,7 @@ def index(request):
 
 
 def login(request):
-    if request.session.get('is_login', None):   # 不允许重复登录
+    if request.session.get('is_login', None):  # 不允许重复登录
         return redirect('/index/')
     if request.method == "POST":
         login_form = forms.UserForm(request.POST)
@@ -26,7 +28,7 @@ def login(request):
             except:
                 message = '不存在此房客！'
                 return render(request, 'backend/login.html', locals())
-            if  tenant.password == password:
+            if tenant.password == password:
                 request.session['is_login'] = True
                 request.session['user_id'] = tenant.id
                 request.session['user_name'] = tenant.name
