@@ -92,21 +92,32 @@ class ACAdministrator(Personel):
         central_air_conditioner.ac_state = 'set_mode'
         central_air_conditioner.save()
 
-    def setpara(self, temp_mode=1, cool_temp_highlimit=25, cool_temp_lowlimit=18, heat_temp_highlimit=30, heat_temp_lowlimit=25, \
-        default_targettemp=25, feerate_h=1/60, feerate_m=0.5/60, feerate_l=1/180, max_load=3, waiting_duration=120):
+    def setpara(self, temp_mode=None, cool_temp_highlimit=None, cool_temp_lowlimit=None, heat_temp_highlimit=None, heat_temp_lowlimit=None, \
+        default_targettemp=None, feerate_h=None, feerate_m=None, feerate_l=None, max_load=None, waiting_duration=None):
         central_air_conditioner = CentralAirConditioner.objects.all()[0]
         if central_air_conditioner.ac_state == 'set_mode':
-            central_air_conditioner.temp_mode = temp_mode
-            central_air_conditioner.cool_temp_highlimit = cool_temp_highlimit
-            central_air_conditioner.cool_temp_lowlimit = cool_temp_lowlimit
-            central_air_conditioner.heat_temp_highlimit = heat_temp_highlimit
-            central_air_conditioner.heat_temp_lowlimit = heat_temp_lowlimit
-            central_air_conditioner.default_temp = default_targettemp
-            central_air_conditioner.feerate_H = feerate_h
-            central_air_conditioner.feerate_M = feerate_m
-            central_air_conditioner.feerate_L = feerate_l
-            central_air_conditioner.max_load = max_load
-            central_air_conditioner.waiting_duration = waiting_duration
+            if temp_mode is not None:
+                central_air_conditioner.temp_mode = temp_mode
+            if cool_temp_highlimit is not None:
+                central_air_conditioner.cool_temp_highlimit = cool_temp_highlimit
+            if cool_temp_lowlimit is not None:
+                central_air_conditioner.cool_temp_lowlimit = cool_temp_lowlimit
+            if heat_temp_highlimit is not None:
+                central_air_conditioner.heat_temp_highlimit = heat_temp_highlimit
+            if heat_temp_lowlimit is not None:
+                central_air_conditioner.heat_temp_lowlimit = heat_temp_lowlimit
+            if default_temp is not None:
+                central_air_conditioner.default_temp = default_targettemp
+            if feerate_H is not None:
+                central_air_conditioner.feerate_H = feerate_h
+            if feerate_M is not None:
+                central_air_conditioner.feerate_M = feerate_m
+            if feerate_L is not None:
+                central_air_conditioner.feerate_L = feerate_l
+            if max_load is not None:
+                central_air_conditioner.max_load = max_load
+            if waiting_duration is not None:
+                central_air_conditioner.waiting_duration = waiting_duration
             central_air_conditioner.save()
 
     def startup(self):
@@ -258,19 +269,18 @@ class CentralAirConditioner(models.Model):
         ('ready', '就绪'),
         ('none', '备用'),
     )
-
     ac_state = models.CharField(
         choices=ac_state_choice, max_length=64, default='close', verbose_name="中央空调状态")
     temp_mode = models.SmallIntegerField(
-        '制冷制热模式', choices=temp_mode_choice, default=0)
-    cool_temp_highlimit = models.IntegerField('制冷温控范围最高温')
-    cool_temp_lowlimit = models.IntegerField('制冷温控范围最低温')
-    heat_temp_highlimit = models.IntegerField('制热温控范围最高温')
-    heat_temp_lowlimit = models.IntegerField('制热温控范围最低温')
-    default_temp = models.IntegerField('缺省温度')
-    feerate_H = models.FloatField('高风费率')
-    feerate_M = models.FloatField('中风费率')
-    feerate_L = models.FloatField('低风费率')
+        '制冷制热模式', choices=temp_mode_choice, default=1)
+    cool_temp_highlimit = models.IntegerField('制冷温控范围最高温', default=25)
+    cool_temp_lowlimit = models.IntegerField('制冷温控范围最低温', default=18)
+    heat_temp_highlimit = models.IntegerField('制热温控范围最高温', default=30)
+    heat_temp_lowlimit = models.IntegerField('制热温控范围最低温', default=25)
+    default_temp = models.IntegerField('缺省温度', default=25)
+    feerate_H = models.FloatField('高风费率', default=1.0/60)
+    feerate_M = models.FloatField('中风费率', default=0.5/60)
+    feerate_L = models.FloatField('低风费率', default=1.0/180)
     max_load = models.IntegerField('最大带机量', default=3)
     waiting_duration = models.IntegerField(default=120)
 
