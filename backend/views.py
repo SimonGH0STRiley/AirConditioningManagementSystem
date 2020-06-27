@@ -4,16 +4,9 @@ from django.shortcuts import redirect
 
 from . import forms
 from . import models
-from backend import models
 
 
 # # Create your views here.
-def test(request):
-    var = models.Report.objects.filter(room_id=1, start_time__gt="2020-06-01", start_time__lt="2020-07-01")
-    print(var.values())
-    return HttpResponse("ok")
-
-
 def index(request):
     if not request.session.get('is_login', None):
         return redirect('/login/')
