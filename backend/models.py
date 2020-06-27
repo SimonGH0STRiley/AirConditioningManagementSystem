@@ -324,31 +324,31 @@ class CentralAirConditioner(models.Model):
 
 
         # 全部送风请求都已满足，不需要调度
-        if current_request_cnt <= current_load:
+        if len(waiting_request) == 0:
             return 
 
         for satisfy_request in waiting_request:
             # 尚未超过负载能力，满足送风请求
-            if current_request_cnt <= self.max_load:            
+            if requestQueue.objects.all().filter(room_state=2).count() < self.max_load:            
                 #  与设定制冷制热模式一致
                 if satisfy_request.temp_mode == self.temp_mode:
                     send_air(satisfy_request)
                     
                     
-        else: #  超过负载能力，需要进行调度
-            for may_satisfy_request in waiting_request:
+            else: #  超过负载能力，需要进行调度
                 current_time = timezone.now()
-                weaker_request = serving_request.filter(blow_mode__lt=may_satisfy_request.blow_mode)
+                serving_request = requestQueue.objects.all().filter(room_state=1)
+                weaker_request = serving_request.filter(blow_mode__lt=satisfy_request.blow_mode)
                 if len(weaker_request) > 0:  # 优先级调度，先满足高风速请求
                     weaker_request = weaker_request[0]  # 挑选出一个低风速请求
                     cancel_air(weaker_request)
-                    send_air(may_satisfy_request)
+                    send_air(satisfy_request)
                 else:
-                    equal_request = serving_request.filter(blow_mode=may_satisfy_request.blow_mode).order_by('-service_duration')                    
-                    if len(equal_request) > 0 and may_satisfy_request.request_timestamp <= current_time - datetime.timedelta(seconds=self.waiting_duration):  # 时间片调度
+                    equal_request = serving_request.filter(blow_mode=satisfy_request.blow_mode).order_by('-service_duration')                    
+                    if len(equal_request) > 0 and satisfy_request.request_timestamp <= current_time - datetime.timedelta(seconds=self.waiting_duration):  # 时间片调度
                         equal_request = equal_request[0]  # 关掉服务时间最长的
                         cancel_air(weaker_request)
-                        send_air(may_satisfy_request)
+                        send_air(satisfy_request)
 
 
             
