@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.utils import timezone
-from .models import Room, TemperatureSensor, Tenant
+from .models import Room, TemperatureSensor, Tenant, Report
 import datetime
 
 
@@ -45,6 +45,3 @@ class TemperatureSensorTests(TestCase):
         temp_sensor.update_current_temp(current_time=three_minute_later)
         room = Room.objects.get(pk='房间一')
         self.assertIs(-1e-6 <= temp_sensor.current_temp - (32 - 0.6) <= 1e-6, True)
-
-
-

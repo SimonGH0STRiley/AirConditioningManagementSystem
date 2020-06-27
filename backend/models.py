@@ -206,7 +206,7 @@ class TemperatureSensor(models.Model):
                 self.current_temp = self.init_temp
         else:
             delta_temp_change = temp_change_speed_array[room.blow_mode][0] * \
-                delta_update_time.total_seconds()
+                                delta_update_time.total_seconds()
             self.current_temp -= temp_change_direction * delta_temp_change
         self.last_update = current_time
 
@@ -338,68 +338,14 @@ class CentralAirConditioner(models.Model):
             
         
 
-
-class DetailList(models.Model):
-     list_id = models.CharField('详单号', max_length=64, unique=True)
-     guest_id = models.CharField('房客编号', max_length=64)
-     room_id = models.CharField('房间号', max_length=64)
-     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
-     fee_rate = models.FloatField('费率')
-     fee_duration = models.FloatField('服务时长(分钟)')
-     power_comsumption = models.FloatField('用电度数')
-     fee = models.FloatField('总费用')
-
-
-class BillList(models.Model):
-     list_id = models.CharField('账单号', max_length=64, unique=True)
-     guest_id = models.CharField('房客编号', max_length=64)
-     power_comsumption = models.FloatField('用电总度数')
-     fee = models.FloatField('总费用')
-
-'''
-class RequestQueue(models.Model):
-     queue_id = models.CharField('服务队列号', max_length=64, unique=True)
-     guest_id = models.CharField('房客编号', max_length=64)
-     room_id = models.CharField('房间号', max_length=64)
-     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
-     request_time = models.DateTimeField('发送请求时间')
-     current_temp = models.IntegerField('当前温度')
-     target_temp = models.IntegerField('目标温度')
-
-
-class ServeQueue(models.Model):
-     queue_id = models.CharField('服务队列号', max_length=64, unique=True)
-     guest_id = models.CharField('房客编号', max_length=64)
-     room_id = models.CharField('房间号', max_length=64)
-     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
-     start_time = models.DateTimeField('开始服务时间')
-     end_time = models.DateTimeField('结束服务时间')
-     fee_duration = models.FloatField('服务时长(分钟)')
-     fee_rate = models.FloatField('费率')
-     power_comsumption = models.FloatField('用电度数')
-     fee = models.FloatField('费用')'''
-
-
-class Report(models.Model):
-    guest_id = models.CharField('房客编号', max_length=64)
+class RequestRecord(models.Model):
+    request_id = models.BigAutoField(primary_key=True)
     room_id = models.CharField('房间号', max_length=64)
-    temp_mode = models.SmallIntegerField(
-        '制冷制热模式', choices=temp_mode_choice, default=0)
-    blow_mode = models.SmallIntegerField(
-        '送风模式', choices=blow_mode_choice, default=2)
-    start_time = models.DateTimeField('开始服务时间')
-    end_time = models.DateTimeField('结束服务时间')
-    fee_duration = models.FloatField('服务时长(分钟)')
-    request_time = models.DateTimeField('发送请求时间')
-    end_request_time = models.DateTimeField('停止请求时间')
-    request_num = models.IntegerField('发送请求次数')
-    first_temp = models.IntegerField('初始温度')
+    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
+    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
+    start_temp = models.IntegerField('初始温度')
     target_temp = models.IntegerField('目标温度')
-    power_comsumption = models.FloatField('用电度数')
-    fee = models.FloatField('费用')
+    request_time = models.DateTimeField()
 
 
 class ServiceRecord(models.Model):
