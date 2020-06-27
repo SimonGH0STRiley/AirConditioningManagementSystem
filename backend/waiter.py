@@ -8,11 +8,17 @@ class ServiceObject:
         self.dateOut = dateOut
 
     def createRDR(self, roomId, dateIn, dateOut):
-        # models.Report.objects.filter(roomId=roomId, start_time__gt=dateIn, start_time__lt=dateOut)
-        pass
+        self.listRDR = models.Report.objects.filter(roomId=roomId, start_time__gt=dateIn, start_time__lt=dateOut).values()
 
     def createInvoice(self, roomId, dateIn, dateOut):
-        pass
+        cost = models.Report.objects.filter(roomId=roomId, start_time__gt=dateIn, start_time__lt=dateOut).aggregate(
+            Sum(fee))
+        self.invoice = {
+            "roomId": roomId,
+            "totalFee": cost,
+            "dateIn": dateIn,
+            "dateOut": dateOut
+        }
 
     def printRDR(self, roomId):
         pass
