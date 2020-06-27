@@ -23,7 +23,9 @@ class TemperatureSensorTests(TestCase):
 
         guest.requestOn()
         room = Room.objects.get(pk='房间一')
-        self.assertIs(room.room_state == 1, True)
+        self.assertIs(room.room_state == 2, True)
+        room.room_state = 1
+        room.save()
 
         one_minute_later = current_time + datetime.timedelta(minutes=1)
         temp_sensor.update_current_temp(current_time=one_minute_later)

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+import time
 
 # Create your models here.
 # 制冷制热模式, 默认制冷
@@ -13,6 +14,27 @@ blow_mode_choice = (
     (1, '中风'),
     (2, '高风'),
 )
+# 房间状态
+room_state_choice = (
+    (0, '关闭'),
+    (1, '运行'),
+    (2, '挂起'),
+)
+
+
+class ServeQueue(models.Model):
+    queue_id = models.CharField('服务队列号', max_length=64, unique=True)
+    guest_id = models.CharField('房客编号', max_length=64)
+    room_id = models.CharField('房间号', max_length=64)
+    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
+    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
+    start_time = models.DateTimeField('开始服务时间')
+    end_time = models.DateTimeField('结束服务时间')
+    fee_duration = models.FloatField('服务时长(分钟)')
+    fee_rate = models.FloatField('费率')
+    power_comsumption = models.FloatField('用电度数')
+    fee = models.FloatField('费用')
+
 
 # 浮点误差
 eps = 1e-6
@@ -48,6 +70,16 @@ class Personel(models.Model):
         abstract = True
 
 
+class requestQueue(models.Model):
+    room_id = models.CharField('房间号', max_length=64, primary_key=True)
+    # room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
+    # temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
+    # blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
+    # target_temp = models.IntegerField('目标温度')
+    request_timestamp = models.TimeField(auto_now_add=True)
+    service_duration = models.IntegerField('当前服务时长(秒)', default=0)
+
+
 class ACAdministrator(Personel):
     def __str__(self):
         return self.name
@@ -71,12 +103,13 @@ class ACAdministrator(Personel):
         CentralAirConditioner.ac_state = 'ready'
         CentralAirConditioner.save()
 
-    def checkroomstate(self, list_room=[]):
-        return Room.objects.all()
-
-        # 缺，从数据库还是哪里获取这些数据
-        # 返回该房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
-        # (续)models.Room.blow_mode, models.Room.fee_rate, models.Room.fee, models.Room.duration]
+    def checkroomstate(self):
+        while CentralAirConditioner.ac_state == 'ready':
+            info = Room.objects.all()
+            time.sleep(60)
+            return info
+            # 前端每分钟刷新显示房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
+            # (续)models.Room.blow_mode, models.Room.fee_rate, models.Room.fee, models.Room.duration]
 
     class Meta:
         verbose_name = "空调管理员"  # 可读性佳的名字
@@ -119,23 +152,29 @@ class Tenant(models.Model):
 
     def requestOn(self):
         room = Room.objects.get(pk=self.room_id)
-        room.room_state = 1
+        room.room_state = 2  # 开机后，房间空调处于待机状态，若中央空调能送风才处于工作状态
         room.save()
+        room.requestAir()
 
     def changeTargetTemp(self, target_temp):
         room = Room.objects.get(pk=self.room_id)
         room.target_temp = target_temp
         room.save()
+        room.cancelAir()
+        room.requestAir()
 
     def changeFanSpeed(self, fan_speed):
         room = Room.objects.get(pk=self.room_id)
         room.blow_mode = fan_speed
         room.save()
+        room.cancelAir()
+        room.requestAir()
 
     def requestOff(self):
         room = Room.objects.get(pk=self.room_id)
         room.room_state = 0
         room.save()
+        room.cancelAir()
 
 
 class TemperatureSensor(models.Model):
@@ -165,11 +204,6 @@ class TemperatureSensor(models.Model):
 
 
 class Room(models.Model):
-    room_state_choice = (
-        (0, '关闭'),
-        (1, '运行'),
-        (2, '挂起'),
-    )
     room_id = models.CharField(
         '房间号', max_length=64, unique=True, primary_key=True)
     room_state = models.SmallIntegerField(
@@ -179,10 +213,30 @@ class Room(models.Model):
     blow_mode = models.SmallIntegerField(
         '送风模式', choices=blow_mode_choice, default=1)
     current_temp = models.IntegerField('当前温度')
-    target_temp = models.IntegerField('目标温度')
+    target_temp = models.IntegerField('目标温度', default=default_temp)
     fee_rate = models.FloatField('费率')
     fee = models.FloatField('总费用')
     duration = models.IntegerField('服务时长(秒)')
+
+    def requestAir(self):
+        new_air_request = requestQueue(self.room_id)
+        new_air_request.save()
+
+    def cancelAir(self):
+        old_air_request = requestQueue.objects.get_object(pk=self.room_id)
+        old_air_request.delete()
+
+    def auto_ajust_temp(self):
+        if self.room_state == 1:  
+            # 达到目标温度，取消送风
+            if (self.temp_mode == 1 and self.current_temp <= self.target_temp + eps) or \
+                (self.temp_mode == -1 and self.current_temp >= self.target_temp - eps):
+                self.cancelAir()
+        elif self.room_state == 2:
+            # 偏离目标温度一度，请求送风
+            if (self.temp_mode == 1 and self.current_temp >= self.target_temp + 1 - eps) or \
+                (self.temp_mode == -1 and self.current_temp <= self.target_temp - 1 + eps):
+                self.requestAir()
 
 
 class CentralAirConditioner(models.Model):
@@ -203,7 +257,6 @@ class CentralAirConditioner(models.Model):
     feerate_H = models.FloatField('高风费率')
     feerate_M = models.FloatField('中风费率')
     feerate_L = models.FloatField('低风费率')
-
 
 class RequestRecord(models.Model):
     request_id = models.BigAutoField(primaryKey=True)
