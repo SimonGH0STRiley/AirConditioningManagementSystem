@@ -1,10 +1,11 @@
 let mysql  = require('mysql');
 
 let connection = mysql.createConnection({
-    host     : 'tbd',
-    user     : 'admin',
-    password : '12345678',
-    database : 'ac'
+    host     : '103.105.49.174:3306',
+    user     : 'root',
+    password : 'some_pass',
+    // TODO: 2 Be Done
+    database : 'test_AirConditioningManagementSystem'
 });
 
 
@@ -81,7 +82,7 @@ function updateRoomStatus (targetRoom, targetTemperature, currTemperature) {
 }
 
 function calRoomACFee (targetRoom) {
-    // TODO: disscuss about it
+    // TODO: discuss about it
 }
 
 module.exports = {queryRoomStatus, updateRoomStatus};
