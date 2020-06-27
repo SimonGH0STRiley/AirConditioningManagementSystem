@@ -88,31 +88,35 @@ class ACAdministrator(Personel):
         return self.name
 
     def poweron(self):
-        CentralAirConditioner.ac_state = 'set_mode'
-        CentralAirConditioner.save()
+        central_air_conditioner = CentralAirConditioner.objects.all()[0]
+        central_air_conditioner.ac_state = 'set_mode'
+        central_air_conditioner.save()
 
     def setpara(self, temp_mode=1, cool_temp_highlimit=25, cool_temp_lowlimit=18, heat_temp_highlimit=30, heat_temp_lowlimit=25, \
         default_targettemp=25, feerate_h=1/60, feerate_m=0.5/60, feerate_l=1/180, max_load=3, waiting_duration=120):
-        if CentralAirConditioner.ac_state == 'set_mode':
-            CentralAirConditioner.temp_mode = temp_mode
-            CentralAirConditioner.cool_temp_highlimit = cool_temp_highlimit
-            CentralAirConditioner.cool_temp_lowlimit = cool_temp_lowlimit
-            CentralAirConditioner.heat_temp_highlimit = heat_temp_highlimit
-            CentralAirConditioner.heat_temp_lowlimit = heat_temp_lowlimit
-            CentralAirConditioner.default_temp = default_targettemp
-            CentralAirConditioner.feerate_H = feerate_h
-            CentralAirConditioner.feerate_M = feerate_m
-            CentralAirConditioner.feerate_L = feerate_l
-            CentralAirConditioner.max_load = max_load
-            CentralAirConditioner.waiting_duration = waiting_duration
-            CentralAirConditioner.save()
+        central_air_conditioner = CentralAirConditioner.objects.all()[0]
+        if central_air_conditioner.ac_state == 'set_mode':
+            central_air_conditioner.temp_mode = temp_mode
+            central_air_conditioner.cool_temp_highlimit = cool_temp_highlimit
+            central_air_conditioner.cool_temp_lowlimit = cool_temp_lowlimit
+            central_air_conditioner.heat_temp_highlimit = heat_temp_highlimit
+            central_air_conditioner.heat_temp_lowlimit = heat_temp_lowlimit
+            central_air_conditioner.default_temp = default_targettemp
+            central_air_conditioner.feerate_H = feerate_h
+            central_air_conditioner.feerate_M = feerate_m
+            central_air_conditioner.feerate_L = feerate_l
+            central_air_conditioner.max_load = max_load
+            central_air_conditioner.waiting_duration = waiting_duration
+            central_air_conditioner.save()
 
     def startup(self):
-        CentralAirConditioner.ac_state = 'ready'
-        CentralAirConditioner.save()
+        central_air_conditioner = CentralAirConditioner()
+        central_air_conditioner.ac_state = 'ready'
+        central_air_conditioner.save()
 
     def checkroomstate(self):
-        while CentralAirConditioner.ac_state == 'ready':
+        central_air_conditioner = CentralAirConditioner.objects.all()[0]
+        while central_air_conditioner.ac_state == 'ready':
             info = Room.objects.all()
             time.sleep(60)
             return info
