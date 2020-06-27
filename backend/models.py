@@ -76,19 +76,15 @@ class Tenant(models.Model):
     name = models.CharField(max_length=128, unique=True)
     password = models.CharField(max_length=256, default='')
     c_time = models.DateTimeField(auto_now_add=True)   # 角色创建时间，用于排序管理
-    # room_id = models.CharField('房间号', max_length=64, primary_key=True)
-    # date_in = models.DateField('入住日期', null=True)
-    # date_out = models.DateField('登出日期', null=True)
+    room_id = models.CharField('房间号', max_length=64, primary_key=True)
+    date_in = models.DateField('入住日期', null=True)
+    date_out = models.DateField('登出日期', null=True)
 
     class Meta:
         ordering = ["-c_time"]                         # 按创建时间降序排序, 优先显示新创建的
         verbose_name = "房客"                          # 可读性佳的名字
         verbose_name_plural = "房客"                   # 复数形式
 
-class Guest(Tenant):
-    room_id = models.CharField('房间号', max_length=64, primary_key=True)
-    date_in = models.DateField('入住日期', null=True)
-    date_out = models.DateField('登出日期', null=True)
     def initiateTenant():
         pass
     def requestOn(self):

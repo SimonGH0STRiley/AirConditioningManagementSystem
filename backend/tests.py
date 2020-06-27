@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.utils import timezone
-from .models import Room, TemperatureSensor, Guest
+from .models import Room, TemperatureSensor, Tenant
 import datetime
 
 
@@ -18,7 +18,7 @@ class TemperatureSensorTests(TestCase):
             last_update = current_time
         )
         temp_sensor.save()
-        guest = Guest(room_id='房间一', date_in=datetime.date.today(), date_out=datetime.date.today())
+        guest = Tenant(room_id='房间一', date_in=datetime.date.today(), date_out=datetime.date.today())
         guest.save()
 
         guest.requestOn()
