@@ -1,10 +1,12 @@
 from django.db import models
 from django.utils import timezone
 
+# Create your models here.
+# Create your models here.
 # 制冷制热模式, 默认制冷
 temp_mode_choice = (
-        (1, '制冷模式'),
-        (-1, '制热模式'),
+    (1, '制冷模式'),
+    (-1, '制热模式'),
 )
 # 送风模式，风速
 blow_mode_choice = (
@@ -33,13 +35,15 @@ feerate_choice = (
     (0.00833, '高风单位耗电量(度/秒)'),  # 缺省风速
     (0.00556, '高风单位耗电量(度/秒)'),
 )
+# room_list
+room_list = [1, 2, 3, 4, 5]
 
 
 class Personel(models.Model):
     name = models.CharField(max_length=128, unique=True)
     password = models.CharField(max_length=256, default='')
     c_time = models.DateTimeField(auto_now_add=True)  # 角色创建时间，用于排序管理
-    
+
     class Meta:
         ordering = ["-c_time"]  # 按创建时间降序排序, 优先显示新创建的
         abstract = True
@@ -49,9 +53,36 @@ class ACAdministrator(Personel):
     def __str__(self):
         return self.name
 
+    def poweron(self):
+        CentralAirConditioner.ac_state = 'set_mode'
+        CentralAirConditioner.save()
+
+    def setpara(self, temp_mode, temp_highlimit, temp_lowlimit, default_targettemp, feerate_h, feerate_m, feerate_l):
+        if CentralAirConditioner.ac_state == 'set_mode':
+            CentralAirConditioner.temp_mode = temp_mode
+            CentralAirConditioner.temp_highlimit = temp_highlimit
+            CentralAirConditioner.temp_lowlimit = temp_lowlimit
+            CentralAirConditioner.default_temp = default_targettemp
+            CentralAirConditioner.feerate_H = feerate_h
+            CentralAirConditioner.feerate_M = feerate_m
+            CentralAirConditioner.feerate_L = feerate_l
+            CentralAirConditioner.save()
+
+    def startup(self):
+        CentralAirConditioner.ac_state = 'ready'
+        CentralAirConditioner.save()
+
+    def checkroomstate(self, list_room=[]):
+        return Room.objects.all()
+
+
+            # 缺，从数据库还是哪里获取这些数据
+            # 返回该房间的[models.Room.room_state, models.Room.current_temp, models.Room.target_temp,
+            # (续)models.Room.blow_mode, models.Room.fee_rate, models.Room.fee, models.Room.duration]
+
     class Meta:
-        verbose_name = "空调管理员"                      # 可读性佳的名字
-        verbose_name_plural = "空调管理员"               # 复数形式
+        verbose_name = "空调管理员"  # 可读性佳的名字
+        verbose_name_plural = "空调管理员"  # 复数形式
 
 
 class Waiter(Personel):
@@ -59,8 +90,8 @@ class Waiter(Personel):
         return self.name
 
     class Meta:
-        verbose_name = "前台服务员"                      # 可读性佳的名字
-        verbose_name_plural = "前台服务员"               # 复数形式
+        verbose_name = "前台服务员"  # 可读性佳的名字
+        verbose_name_plural = "前台服务员"  # 复数形式
 
 
 class Manager(Personel):
@@ -68,25 +99,26 @@ class Manager(Personel):
         return self.name
 
     class Meta:
-        verbose_name = "酒店经理"                       # 可读性佳的名字
-        verbose_name_plural = "酒店经理"                # 复数形式
+        verbose_name = "酒店经理"  # 可读性佳的名字
+        verbose_name_plural = "酒店经理"  # 复数形式
 
 
 class Tenant(models.Model):
     name = models.CharField(max_length=128, unique=True)
     password = models.CharField(max_length=256, default='')
-    c_time = models.DateTimeField(auto_now_add=True)   # 角色创建时间，用于排序管理
+    c_time = models.DateTimeField(auto_now_add=True)  # 角色创建时间，用于排序管理
     room_id = models.CharField('房间号', max_length=64, primary_key=True)
     date_in = models.DateField('入住日期', null=True)
     date_out = models.DateField('登出日期', null=True)
 
     class Meta:
-        ordering = ["-c_time"]                         # 按创建时间降序排序, 优先显示新创建的
-        verbose_name = "房客"                          # 可读性佳的名字
-        verbose_name_plural = "房客"                   # 复数形式
+        ordering = ["-c_time"]  # 按创建时间降序排序, 优先显示新创建的
+        verbose_name = "房客"  # 可读性佳的名字
+        verbose_name_plural = "房客"  # 复数形式
 
-    def initiateTenant():
+    def initiateTenant(self):
         pass
+
     def requestOn(self):
         room = Room.objects.get(pk=self.room_id)
         room.room_state = 1
@@ -101,7 +133,7 @@ class Tenant(models.Model):
         room = Room.objects.get(pk=self.room_id)
         room.blow_mode = fan_speed
         room.save()
-        
+
     def requestOff(self):
         room = Room.objects.get(pk=self.room_id)
         room.room_state = 0
@@ -147,25 +179,24 @@ class Room(models.Model):
     fee = models.FloatField('总费用')
     duration = models.IntegerField('服务时长(秒)')
 
+class CentralAirConditioner(models.Model):
+    ac_state_choice = (
+        ('close', '关闭'),
+        ('set_Model', '设置模式'),
+        ('ready', '就绪'),
+        ('none', '备用'),
+    )
 
-# class CentralAirConditioner(models.Model):
-#     ac_state_choice = (
-#         ('close', '关闭'),
-#         ('set_Model', '设置模式'),
-#         ('ready', '就绪'),
-#         ('none', '备用'),
-#     )
-#
-#     ac_state = models.CharField(choices=ac_state_choice, max_length=64, default='close', verbose_name="中央空调状态")
-#     temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-#     temp_highlimit = models.IntegerField('温控范围最高温')
-#     temp_lowlimit = models.IntegerField('温控范围最低温')
-#     default_temp = models.IntegerField('缺省温度')
-#     feerate_H = models.FloatField('高风费率')
-#     feerate_M = models.FloatField('中风费率')
-#     feerate_L = models.FloatField('低风费率')
-#
-#
+    ac_state = models.CharField(choices=ac_state_choice, max_length=64, default='close', verbose_name="中央空调状态")
+    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
+    temp_highlimit = models.IntegerField('温控范围最高温')
+    temp_lowlimit = models.IntegerField('温控范围最低温')
+    default_temp = models.IntegerField('缺省温度')
+    feerate_H = models.FloatField('高风费率')
+    feerate_M = models.FloatField('中风费率')
+    feerate_L = models.FloatField('低风费率')
+
+
 # class DetailList(models.Model):
 #     list_id = models.CharField('详单号', max_length=64, unique=True)
 #     guest_id = models.CharField('房客编号', max_length=64)
