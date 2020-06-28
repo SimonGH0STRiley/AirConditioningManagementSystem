@@ -160,15 +160,39 @@ class Manager(Personel):
         verbose_name_plural = "酒店经理"  # 复数形式
 
     def dailyReport(self, date_start, date_end):
-        # open_time =
-        # service_time = ServiceRecord.objects.values('RR__room_id', 'start_time','service_time').annoteta(service_time=Sum('service_time'))
-        # room_fee = ServiceRecord.objects.values('RR__room_id', 'start_time', 'fee').annotate(room_fee=Sum('fee'))
-        # schedule_count = ServiceRecord.objects.values('RR__room_id','start_time', 'start_time').annoteta(schedule_count=Count('start_time'))
-        # dr_count = ServiceRecord.objects.values('RR__room_id', 'end_time').annoteta(dr_count=Count('end_time'))
-        # speed_change =
-        # temp_change =
-        pass
+        room_fee = []
+        detail_record = []
 
+        basic_room_info = RoomDailyReport.objects.filter(date__range=(date_start.date(), date_end.date())).\
+            values('room_id', 'date', 'switch_count', 'schedule_count', 'change_temp_count', 'change_speed_count')
+
+        for i in range((date_end - date_start).days+1):
+            date = date_start+datetime.timedelta(days=i)
+            day_service_items = ServiceRecord.objects.filter(start_time__date=date).values('RR__room_id').\
+                annotate(Sum('service_time')).values('RR__room_id', 'service_time__sum')
+
+            for k in day_service_items:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['service_time__sum'] = k['service_time__sum']
+
+            day_room_fee = ServiceRecord.objects.filter(start_time__date=date).values('RR__room_id').\
+                annotate(Sum('fee')).values('RR__room_id', 'fee__sum')
+
+            for k in day_room_fee:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['fee__sum'] = k['fee__sum']
+
+            day_detail_record = ServiceRecord.objects.filter(start_time__date=date).values('RR__room_id'). \
+                annotate(detail_record_count=Count('RR__room_id')).values('RR__room_id', 'detail_record_count')
+
+            for k in day_detail_record:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['detail_record_count'] = k['detail_record_count']
+
+        return basic_room_info
 
 
     def weeklyReport(self):
@@ -281,7 +305,7 @@ class TemperatureSensor(models.Model):
 
 class RoomDailyReport(models.Model):
     room_id = models.CharField('房间号', max_length=64)
-    date = models.DateField('日期', auto_now=True)
+    date = models.DateField('日期')
     switch_count = models.IntegerField('开关次数', default=0)
     schedule_count = models.IntegerField('被调度次数', default=0)
     change_temp_count = models.IntegerField('调温次数', default=0)
