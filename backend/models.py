@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.utils import timezone
 import time
 import datetime
@@ -158,6 +158,27 @@ class Manager(Personel):
     class Meta:
         verbose_name = "酒店经理"  # 可读性佳的名字
         verbose_name_plural = "酒店经理"  # 复数形式
+
+    def dailyReport(self, date_start, date_end):
+        open_time =
+        service_time = ServiceRecord.objects.values('RR__room_id', 'start_time','service_time').annoteta(service_time=Sum('service_time'))
+        room_fee = ServiceRecord.objects.values('RR__room_id', 'start_time', 'fee').annotate(room_fee=Sum('fee'))
+        schedule_count = ServiceRecord.objects.values('RR__room_id','start_time', 'start_time').annoteta(schedule_count=Count('start_time'))
+        dr_count = ServiceRecord.objects.values('RR__room_id', 'end_time').annoteta(dr_count=Count('end_time'))
+        speed_change =
+        temp_change =
+
+
+
+
+    def weeklyReport(self):
+        pass
+
+    def monthlyReport(self):
+        pass
+
+    def yearlyReport(self):
+        pass
 
 
 class Tenant(models.Model):
@@ -439,6 +460,7 @@ class ServiceRecord(models.Model):
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    service_time = models.DateTimeField()
     power_comsumption = models.FloatField('用电度数')
     now_temp = models.FloatField('当前温度')
     fee_rate = models.FloatField('费率', choices=feerate_choice, default=2)
