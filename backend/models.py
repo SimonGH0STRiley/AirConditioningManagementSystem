@@ -41,8 +41,8 @@ default_temp = 25
 # 各档风速耗电量
 feerate_choice = (
     (0.01666, '高风单位耗电量(度/秒)'),
-    (0.00833, '高风单位耗电量(度/秒)'),  # 缺省风速
-    (0.00556, '高风单位耗电量(度/秒)'),
+    (0.00833, '中风单位耗电量(度/秒)'),  # 缺省风速
+    (0.00556, '低风单位耗电量(度/秒)'),
 )
 # room_list
 room_list = [1, 2, 3, 4, 5]
@@ -85,11 +85,11 @@ class ACAdministrator(Personel):
                 central_air_conditioner.heat_temp_lowlimit = heat_temp_lowlimit
             if default_temp is not None:
                 central_air_conditioner.default_temp = default_targettemp
-            if feerate_H is not None:
+            if feerate_h is not None:
                 central_air_conditioner.feerate_H = feerate_h
-            if feerate_M is not None:
+            if feerate_m is not None:
                 central_air_conditioner.feerate_M = feerate_m
-            if feerate_L is not None:
+            if feerate_l is not None:
                 central_air_conditioner.feerate_L = feerate_l
             if max_load is not None:
                 central_air_conditioner.max_load = max_load
@@ -238,10 +238,23 @@ class Room(models.Model):
     def requestAir(self):
         new_air_request = requestQueue(self.room_id, self.room_state, self.temp_mode, self.blow_mode)
         new_air_request.save()
+        new_request_record = RequestRecord(  # 创建请求记录
+            room_id=self.room_id, room_state=self.room_state, blow_mode=self.blow_mode,
+            start_temp=self.current_temp, target_temp=self.target_temp, request_time=timezone.now()
+        )
+        new_request_record.save()
 
     def cancelAir(self):
         old_air_request = requestQueue.objects.get(pk=self.room_id)
         old_air_request.delete()
+
+        old_request_record = RequestRecord.objects.get(room_id=self.room_id, finished=0)
+        old_request_record.finished=1  # 结束请求记录
+        old_request_record.save()
+        ServiceRecord.objects.filter(RR=old_request_record.RR, room_id=self.room_id)\
+            .update(end_time=timezone.now, power_comsumption=old_request_record.service_duration * old_request_record.blow_mode / 180.0,
+            fee=old_request_record.service_duration * old_request_record.blow_mode / 180.0)
+
 
     def auto_ajust_temp(self):
         if self.room_state == 1:
@@ -278,6 +291,7 @@ class CentralAirConditioner(models.Model):
     max_load = models.IntegerField('最大带机量', default=3)
     waiting_duration = models.IntegerField(default=120)
 
+    # 需要每秒运行
     def billing(self):
         pass
 
@@ -292,6 +306,13 @@ class CentralAirConditioner(models.Model):
             satisfy_request.room_state = 1  # 开始送风
             satisfy_request.air_timestamp = timezone.now()  # 送风开始时间
             satisfy_request.save()
+            
+            request_record = RequestRecord.objects.get(room_id=satisfy_request.room_id, finished=0)
+            new_service_record = ServiceRecord(
+                RR=request_record.RR, room_id=satisfy_request.room_id, blow_mode=request_record.blow_mode,
+                start_time=timezone.now(), ntemp=satisfy_room.current_temp
+            )
+            new_service_record.save()
 
         def cancel_air(weaker_request):
             weaker_room = Room.objects.get(pk=weaker_request.room_id)
@@ -301,7 +322,11 @@ class CentralAirConditioner(models.Model):
             weaker_request.room_state = 2  # 停止送风
             weaker_request.request_timestamp = timezone.now()  # 重新计时
             weaker_request.save()
-            # 待补充：在别的地方记录送风结束时间
+
+            old_request_record = RequestRecord.objects.get(room_id=weaker_request.room_id, finished=0)
+            ServiceRecord.objects.filter(RR=old_request_record.RR, room_id=weaker_request.room_id)\
+                .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0,
+                fee=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
 
         all_rooms = Room.objects.all()
         all_requests = requestQueue.objects.all()
@@ -351,6 +376,7 @@ class RequestRecord(models.Model):
     start_temp = models.IntegerField('初始温度')
     target_temp = models.IntegerField('目标温度')
     request_time = models.DateTimeField()
+    finished = models.IntegerField('结束', default=0)
 
 
 class ServiceRecord(models.Model):
