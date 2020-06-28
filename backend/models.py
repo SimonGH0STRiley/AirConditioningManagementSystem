@@ -67,7 +67,7 @@ class requestQueue(models.Model):
     request_timestamp = models.DateTimeField('请求送风时间戳', auto_now_add=True)
     air_timestamp = models.DateTimeField('开始送风时间戳', null=True)
     service_duration = models.IntegerField('当前服务时长(秒)', default=0)
-    
+
 
 class ACAdministrator(Personel):
     def __str__(self):
@@ -179,6 +179,7 @@ class Tenant(models.Model):
     def requestOn(self):
         room = Room.objects.get(pk=self.room_id)
         room.room_state = 2  # 开机后，房间空调处于待机状态，若中央空调能送风才处于工作状态
+        room.switch_count += 1
         room.save()
         room.requestAir()
 
@@ -245,6 +246,7 @@ class Room(models.Model):
     # fee_rate = models.FloatField('费率')
     fee = models.FloatField('总费用')
     duration = models.IntegerField('服务时长(秒)')
+    switch_count = models.IntegerField('开关次数', default=0)
 
     def requestAir(self):
         new_air_request = requestQueue(self.room_id, self.room_state, self.temp_mode, self.blow_mode)
