@@ -58,6 +58,17 @@ class Personel(models.Model):
         abstract = True
 
 
+class requestQueue(models.Model):
+    room_id = models.CharField('房间号', max_length=64, primary_key=True)
+    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
+    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
+    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
+    # target_temp = models.IntegerField('目标温度')
+    request_timestamp = models.DateTimeField('请求送风时间戳', auto_now_add=True)
+    air_timestamp = models.DateTimeField('开始送风时间戳', null=True)
+    service_duration = models.IntegerField('当前服务时长(秒)', default=0)
+    
+
 class ACAdministrator(Personel):
     def __str__(self):
         return self.name
