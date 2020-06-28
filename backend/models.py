@@ -260,8 +260,8 @@ class Room(models.Model):
         old_request_record.finished=1  # 结束请求记录
         old_request_record.save()
         ServiceRecord.objects.filter(RR=old_request_record.RR, room_id=self.room_id)\
-            .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0,
-            fee=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
+            .update(end_time=timezone.now, power_comsumption=old_request_record.service_duration * old_request_record.blow_mode / 180.0,
+            fee=old_request_record.service_duration * old_request_record.blow_mode / 180.0)
 
 
     def auto_ajust_temp(self):
