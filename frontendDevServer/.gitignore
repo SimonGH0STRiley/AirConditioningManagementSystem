@@ -1,0 +1,7 @@
+/.idea/
+.vscode
+client/*
+upload/
+*/__pycache__/*
+*/migrations/*
+__pycache__/*
