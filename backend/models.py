@@ -247,7 +247,7 @@ class Room(models.Model):
     fee = models.FloatField('总费用')
     duration = models.IntegerField('服务时长(秒)')
     switch_count = models.IntegerField('开关次数', default=0)
-    schedule_count = models.IntergerField('被调度次数', default=0)
+    schedule_count = models.IntegerField('被调度次数', default=0)
 
     def requestAir(self):
         new_air_request = requestQueue(self.room_id, self.room_state, self.temp_mode, self.blow_mode)
