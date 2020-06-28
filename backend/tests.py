@@ -6,6 +6,101 @@ import time
 
 
 # Create your tests here.
+class WaiterTest(TestCase):
+    def test_RDR_invoice(self):
+        current_time = timezone.now()
+        date_in = current_time - datetime.timedelta(days=10)
+        date_out = date_in + datetime.timedelta(days=5)
+        request_record = RequestRecord(
+            room_id='房间一', room_state=1, temp_mode=1,
+            start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=1)
+        )
+        request_record.save()
+
+        request_record = RequestRecord(
+            room_id='房间一', room_state=2, temp_mode=1,
+            start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=2)
+        )
+        request_record.save()
+
+        request_record = RequestRecord(
+            room_id='房间一', room_state=1, temp_mode=1,
+            start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=3)
+        )
+        request_record.save()
+
+        request_record = RequestRecord(
+            room_id='房间一', room_state=0, temp_mode=1,
+            start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=4)
+        )
+        request_record.save()
+
+        request_record = RequestRecord(
+            room_id='房间二', room_state=1, temp_mode=1,
+            start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=1)
+        )
+        request_record.save()
+
+        service_record = ServiceRecord(
+            RR_id=1, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
+            end_time=date_in + datetime.timedelta(seconds=90),
+            power_comsumption=0.00833 * 60 * 30, ntemp=32 - 0.25, fee_rate=1, fee=0.00833 * 60 * 30
+        )
+        service_record.save()
+
+        service_record = ServiceRecord(
+            RR_id=5, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
+            end_time=date_in + datetime.timedelta(seconds=90),
+            power_comsumption=0.00833 * 60 * 30, ntemp=32 - 0.25, fee_rate=1, fee=0.00833 * 60 * 30
+        )
+        service_record.save()
+
+        service_record = ServiceRecord(
+            RR_id=1, blow_mode=0, start_time=date_in + datetime.timedelta(seconds=90),
+            end_time=date_in + datetime.timedelta(minutes=2),
+            power_comsumption=0.01666 * 60 * 30, ntemp=32 - 0.25 - 0.2, fee_rate=1, fee=0.01666 * 60 * 30
+        )
+        service_record.save()
+
+        service_record = ServiceRecord(
+            RR_id=3, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=3),
+            end_time=date_in + datetime.timedelta(minutes=4),
+            power_comsumption=0.00833 * 60 * 30, ntemp=32 - 0.25 - 0.2 + 0.5, fee_rate=1, fee=0.00833 * 60 * 30
+        )
+        service_record.save()
+
+        w = Waiter(name='waiter1', password='none', c_time=current_time)
+        detailRecords = w.printRDR('房间一', date_in, date_out)
+        invoice = w.printInvoice('房间一', date_in, date_out)
+        expected_detailRecords = [
+                                     dict(
+                                         RR_id=1, blow_mode=0, start_time=date_in + datetime.timedelta(seconds=90),
+                                         end_time=date_in + datetime.timedelta(seconds=90),
+                                         power_comsumption=0.00833 * 60 * 30, ntemp=32 - 0.25, fee_rate=1,
+                                         fee=0.00833 * 60 * 30
+                                     ),
+                                     dict(
+                                         RR_id=1, blow_mode=0, start_time=date_in + datetime.timedelta(seconds=90),
+                                         end_time=date_in + datetime.timedelta(minutes=2),
+                                         ower_comsumption=0.01666 * 60 * 30, ntemp=32 - 0.25 - 0.2, fee_rate=1,
+                                         fee=0.01666 * 60 * 30
+                                     ),
+                                     dict(
+                                         RR_id=1, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=3),
+                                         end_time=date_in + datetime.timedelta(minutes=4),
+                                         power_comsumption=0.00833 * 60 * 30, ntemp=32 - 0.25 - 0.2 + 0.5, fee_rate=1,
+                                         fee=0.00833 * 60 * 30
+                                     )
+                                 ]
+        self.assertQuerysetEqual(detailRecords, expected_detailRecords, map(repr, expected_detailRecords))
+        self.assertDictEqual(invoice,
+                             {
+                                 "room_id": '房间一',
+                                 "total_fee": 0.00833 * 60 * 30 * 2 + 0.01666 * 60 * 30,
+                                 "date_in": date_in,
+                                 "date_out": date_out
+                             })
+
 class ScheduleTests(TestCase):
     def test_schedule_priority(self):
         admin = ACAdministrator()
@@ -98,3 +193,4 @@ class TemperatureSensorTests(TestCase):
         temp_sensor.update_current_temp(current_time=three_minute_later)
         room = Room.objects.get(pk='1')
         self.assertIs(-1e-6 <= temp_sensor.current_temp - (32 - 0.6) <= 1e-6, True)'''
+

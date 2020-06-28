@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 import time
 import datetime
@@ -23,21 +24,6 @@ room_state_choice = (
     (2, '挂起'),
 )
 
-
-class ServeQueue(models.Model):
-    queue_id = models.CharField('服务队列号', max_length=64, unique=True)
-    guest_id = models.CharField('房客编号', max_length=64)
-    room_id = models.CharField('房间号', max_length=64)
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=0)
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
-    start_time = models.DateTimeField('开始服务时间')
-    end_time = models.DateTimeField('结束服务时间')
-    fee_duration = models.FloatField('服务时长(分钟)')
-    fee_rate = models.FloatField('费率')
-    power_comsumption = models.FloatField('用电度数')
-    fee = models.FloatField('费用')
-
-
 # 浮点误差
 eps = 1e-6
 # 费率：1元/度
@@ -55,8 +41,8 @@ default_temp = 25
 # 各档风速耗电量
 feerate_choice = (
     (0.01666, '高风单位耗电量(度/秒)'),
-    (0.00833, '高风单位耗电量(度/秒)'),  # 缺省风速
-    (0.00556, '高风单位耗电量(度/秒)'),
+    (0.00833, '中风单位耗电量(度/秒)'),  # 缺省风速
+    (0.00556, '低风单位耗电量(度/秒)'),
 )
 # room_list
 room_list = [1, 2, 3, 4, 5]
@@ -72,6 +58,7 @@ class Personel(models.Model):
         abstract = True
 
 
+
 class requestQueue(models.Model):
     room_id = models.CharField('房间号', max_length=64, primary_key=True)
     room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
@@ -81,7 +68,6 @@ class requestQueue(models.Model):
     request_timestamp = models.DateTimeField('请求送风时间戳', auto_now_add=True)
     air_timestamp = models.DateTimeField('开始送风时间戳', null=True)
     service_duration = models.IntegerField('当前服务时长(秒)', default=0)
-
 
 class ACAdministrator(Personel):
     def __str__(self):
@@ -146,6 +132,20 @@ class Waiter(Personel):
     class Meta:
         verbose_name = "前台服务员"  # 可读性佳的名字
         verbose_name_plural = "前台服务员"  # 复数形式
+
+    def printRDR(self, room_id, date_in, date_out):
+        records = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out))
+        return records
+
+    def printInvoice(self, room_id, date_in, date_out):
+        total_fee = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out)).aggregate(Sum("fee")).get('fee__sum')
+        invoice = {
+            "room_id": room_id,
+            "total_fee": total_fee,
+            "date_in": date_in,
+            "date_out": date_out
+        }
+        return invoice
 
 
 class Manager(Personel):
@@ -259,8 +259,9 @@ class Room(models.Model):
         old_request_record = RequestRecord.objects.get(room_id=self.room_id, finished=0)
         old_request_record.finished=1  # 结束请求记录
         old_request_record.save()
-        ServiceRecord.objects.filter(request_id=old_request_record.request_id, room_id=self.room_id)\
-            .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
+        ServiceRecord.objects.filter(RR=old_request_record.RR, room_id=self.room_id)\
+            .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0,
+            fee=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
 
 
     def auto_ajust_temp(self):
@@ -316,7 +317,7 @@ class CentralAirConditioner(models.Model):
             
             request_record = RequestRecord.objects.get(room_id=satisfy_request.room_id, finished=0)
             new_service_record = ServiceRecord(
-                request_id=request_record.request_id, room_id=satisfy_request.room_id, blow_mode=request_record.blow_mode,
+                RR=request_record.RR, room_id=satisfy_request.room_id, blow_mode=request_record.blow_mode,
                 start_time=timezone.now(), ntemp=satisfy_room.current_temp
             )
             new_service_record.save()
@@ -332,8 +333,9 @@ class CentralAirConditioner(models.Model):
             weaker_request.save()
 
             old_request_record = RequestRecord.objects.get(room_id=weaker_request.room_id, finished=0)
-            ServiceRecord.objects.filter(request_id=old_request_record.request_id, room_id=weaker_request.room_id)\
-                .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
+            ServiceRecord.objects.filter(RR=old_request_record.RR, room_id=weaker_request.room_id)\
+                .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0,
+                fee=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
 
 
         all_rooms = Room.objects.all()
@@ -375,14 +377,10 @@ class CentralAirConditioner(models.Model):
                         send_air(satisfy_request)
 
 
-            
-        
-
 class RequestRecord(models.Model):
-    request_id = models.BigAutoField(primary_key=True)
     room_id = models.CharField('房间号', max_length=64)
-    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
+    room_state = models.SmallIntegerField("房间送风状态", choices=room_state_choice, default=2)
+    temp_mode = models.SmallIntegerField('送风模式', choices=temp_mode_choice, default=2)
     start_temp = models.IntegerField('初始温度')
     target_temp = models.IntegerField('目标温度')
     request_time = models.DateTimeField()
@@ -390,10 +388,10 @@ class RequestRecord(models.Model):
 
 
 class ServiceRecord(models.Model):
-    service_id = models.BigAutoField(primary_key=True)
-    request_id = models.ForeignKey("RequestRecord", on_delete=models.CASCADE)
+    RR = models.ForeignKey("RequestRecord", on_delete=models.CASCADE)
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True)
     power_comsumption = models.FloatField('用电度数', default=0)
     ntemp = models.FloatField('当前温度')
+    fee = models.FloatField('电费', default=0)
