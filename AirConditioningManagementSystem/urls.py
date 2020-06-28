@@ -28,7 +28,7 @@ urlpatterns = [
     path('acadminview/', views.acadminview, name='acadminview'),
     path('waiterview/', views.waiterview, name='waiterview'),
     path('managerview/', views.managerview, name='managerview'),
-    path('tenantview/<char:room_id>', views.tenantview, name='tenantview'),
+    path('tenantview/', views.tenantview, name='tenantview'),
     # path('', views.index),
     # path('admin/', admin.site.urls),
     # path('index/', views.index),

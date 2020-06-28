@@ -94,7 +94,7 @@ class ACAdministrator(Personel):
                 central_air_conditioner.heat_temp_highlimit = heat_temp_highlimit
             if heat_temp_lowlimit is not None:
                 central_air_conditioner.heat_temp_lowlimit = heat_temp_lowlimit
-            if default_temp is not None:
+            if default_targettemp is not None:
                 central_air_conditioner.default_temp = default_targettemp
             if feerate_h is not None:
                 central_air_conditioner.feerate_H = feerate_h
@@ -307,11 +307,11 @@ class Tenant(models.Model):
     def requestOn(self):
         room = Room.objects.get(pk=self.room_id)
         room.room_state = 2  # 开机后，房间空调处于待机状态，若中央空调能送风才处于工作状态
-        room.switch_count += 1
+        # room.switch_count += 1
         room.save()
         room_daily_report = RoomDailyReport.objects.filter(room_id=self.room_id, date=datetime.date.today())
         if room_daily_report.count() == 0:
-            room_daily_report = RoomDailyReport(room_id=self.room_id)
+            room_daily_report = RoomDailyReport(room_id=self.room_id, date=datetime.date.today())
         else:
             room_daily_report = room_daily_report[0]
         room_daily_report.switch_count += 1
@@ -326,7 +326,7 @@ class Tenant(models.Model):
 
         room_daily_report = RoomDailyReport.objects.filter(room_id=self.room_id, date=datetime.date.today())
         if room_daily_report.count() == 0:
-            room_daily_report = RoomDailyReport(room_id=self.room_id)
+            room_daily_report = RoomDailyReport(room_id=self.room_id, date=datetime.date.today())
         else:
             room_daily_report = room_daily_report[0]
         room_daily_report.change_temp_count += 1
@@ -342,7 +342,7 @@ class Tenant(models.Model):
         room.save()
         room_daily_report = RoomDailyReport.objects.filter(room_id=self.room_id, date=datetime.date.today())
         if room_daily_report.count() == 0:
-            room_daily_report = RoomDailyReport(room_id=self.room_id)
+            room_daily_report = RoomDailyReport(room_id=self.room_id, date=datetime.date.today())
         else:
             room_daily_report = room_daily_report[0]
         room_daily_report.change_speed_count += 1
@@ -372,7 +372,7 @@ class TemperatureSensor(models.Model):
         # current_time =
         delta_update_time = current_time - self.last_update
         temp_change_direction = room.temp_mode
-        if room.get_room_state_display() != '运行':
+        if room.room_state != 1:
             delta_temp_change = default_temp_changing * delta_update_time.total_seconds()
             self.current_temp += temp_change_direction * delta_temp_change
             # 房间回温算法变化到室温为止
@@ -383,12 +383,14 @@ class TemperatureSensor(models.Model):
             delta_temp_change = temp_change_speed_array[room.blow_mode][0] * \
                                 delta_update_time.total_seconds()
             self.current_temp -= temp_change_direction * delta_temp_change
+        room.current_temp = self.current_temp
+        room.save()
         self.last_update = current_time
 
 
 class RoomDailyReport(models.Model):
     room_id = models.CharField('房间号', max_length=64)
-    date = models.DateField('日期')
+    date = models.DateField('日期', null=True)
     switch_count = models.IntegerField('开关次数', default=0)
     schedule_count = models.IntegerField('被调度次数', default=0)
     change_temp_count = models.IntegerField('调温次数', default=0)
@@ -404,14 +406,16 @@ class Room(models.Model):
         '制冷制热模式', choices=temp_mode_choice, default=1)
     blow_mode = models.SmallIntegerField(
         '送风模式', choices=blow_mode_choice, default=1)
-    current_temp = models.IntegerField('当前温度')
+    current_temp = models.FloatField('当前温度')
     target_temp = models.IntegerField('目标温度', default=default_temp)
     # fee_rate = models.FloatField('费率')
     fee = models.FloatField('总费用')
     duration = models.IntegerField('服务时长(秒)')
+    # send_reair = models.IntegerField('超目标温度后是否发送过请求', default=0)
 
 
     def requestAir(self):
+        if requestQueue.objects.all().filter(room_id=self.room_id, )
         new_air_request = requestQueue(self.room_id, self.room_state, self.temp_mode, self.blow_mode)
         new_air_request.save()
         new_request_record = RequestRecord(  # 创建请求记录
@@ -438,11 +442,13 @@ class Room(models.Model):
             if (self.temp_mode == 1 and self.current_temp <= self.target_temp + eps) or \
                     (self.temp_mode == -1 and self.current_temp >= self.target_temp - eps):
                 self.cancelAir()
+                # self.send_reair = 0
         elif self.room_state == 2:
-            # 偏离目标温度一度，请求送风
-            if (self.temp_mode == 1 and self.current_temp >= self.target_temp + 1 - eps) or \
-                    (self.temp_mode == -1 and self.current_temp <= self.target_temp - 1 + eps):
+            # 偏离目标温度一度，请求送风 self.send_reair == 0 and 
+            if ((self.temp_mode == 1 and self.current_temp >= self.target_temp + 1 - eps) or \
+                    (self.temp_mode == -1 and self.current_temp <= self.target_temp - 1 + eps)):
                 self.requestAir()
+                # self.send_reair = 1
 
 
 class CentralAirConditioner(models.Model):
@@ -460,7 +466,7 @@ class CentralAirConditioner(models.Model):
     cool_temp_lowlimit = models.IntegerField('制冷温控范围最低温', default=18)
     heat_temp_highlimit = models.IntegerField('制热温控范围最高温', default=30)
     heat_temp_lowlimit = models.IntegerField('制热温控范围最低温', default=25)
-    default_temp = models.IntegerField('缺省温度', default=25)
+    default_temp = models.IntegerField('缺省温度', default=25,)
     feerate_H = models.FloatField('高风费率', default=1.0 / 60)
     feerate_M = models.FloatField('中风费率', default=0.5 / 60)
     feerate_L = models.FloatField('低风费率', default=1.0 / 180)
@@ -486,7 +492,7 @@ class CentralAirConditioner(models.Model):
             request_record = RequestRecord.objects.get(room_id=satisfy_request.room_id, finished=0)
             new_service_record = ServiceRecord(
                 RR=request_record.RR, room_id=satisfy_request.room_id, blow_mode=request_record.blow_mode,
-                start_time=timezone.now(), ntemp=satisfy_room.current_temp
+                start_time=timezone.now(), now_temp=satisfy_room.current_temp
             )
             new_service_record.save()
 
@@ -497,7 +503,7 @@ class CentralAirConditioner(models.Model):
             weaker_room.save()
             room_daily_report = RoomDailyReport.objects.filter(room_id=weaker_request.room_id, date=datetime.date.today())
             if room_daily_report.count() == 0:
-                room_daily_report = RoomDailyReport(room_id=self.room_id)
+                room_daily_report = RoomDailyReport(room_id=self.room_id, date=datetime.date.today())
             else:
                 room_daily_report = room_daily_report[0]
             room_daily_report.schedule_count += 1
@@ -509,7 +515,7 @@ class CentralAirConditioner(models.Model):
 
             old_request_record = RequestRecord.objects.get(room_id=weaker_request.room_id, finished=0)
             ServiceRecord.objects.filter(RR=old_request_record.RR, room_id=weaker_request.room_id)\
-                .update(end_time=timezone.now, power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0,
+                .update(end_time=timezone.now(), power_comsumption=weaker_request.service_duration * weaker_request.blow_mode / 180.0,
                 fee=weaker_request.service_duration * weaker_request.blow_mode / 180.0)
 
         all_rooms = Room.objects.all()
@@ -549,27 +555,30 @@ class CentralAirConditioner(models.Model):
                             equal_request) > 0 and satisfy_request.request_timestamp <= current_time - datetime.timedelta(
                             seconds=self.waiting_duration):  # 时间片调度
                         equal_request = equal_request[0]  # 关掉服务时间最长的
-                        cancel_air(weaker_request)
+                        cancel_air(equal_request)
                         send_air(satisfy_request)
 
 
 class RequestRecord(models.Model):
+    RR = models.BigAutoField(primary_key=True)
     room_id = models.CharField('房间号', max_length=64)
     room_state = models.SmallIntegerField("房间送风状态", choices=room_state_choice, default=2)
     temp_mode = models.SmallIntegerField('送风模式', choices=temp_mode_choice, default=2)
     start_temp = models.IntegerField('初始温度')
+    blow_mode = models.IntegerField('风速')
     target_temp = models.IntegerField('目标温度')
     request_time = models.DateTimeField()
     finished = models.IntegerField('结束', default=0)
 
 
 class ServiceRecord(models.Model):
-    RR = models.ForeignKey("RequestRecord", on_delete=models.CASCADE)
+    RR = models.BigIntegerField("RequestRecord")
     blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=2)
     start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    service_time = models.DurationField()
-    power_comsumption = models.FloatField('用电度数')
+    room_id = models.CharField('房间号', max_length=64)
+    end_time = models.DateTimeField(null=True)
+    service_time = models.DurationField(default=timezone.timedelta)
+    power_comsumption = models.FloatField('用电度数', default=0)
     now_temp = models.FloatField('当前温度')
     fee_rate = models.FloatField('费率', choices=feerate_choice, default=2)
-    fee = models.FloatField()
+    fee = models.FloatField(default=0.0)
