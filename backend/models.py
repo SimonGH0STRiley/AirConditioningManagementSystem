@@ -278,6 +278,7 @@ class TemperatureSensor(models.Model):
             self.current_temp -= temp_change_direction * delta_temp_change
         self.last_update = current_time
 
+
 class RoomDailyReport(models.Model):
     room_id = models.CharField('房间号', max_length=64)
     date = models.DateField('日期', auto_now=True)

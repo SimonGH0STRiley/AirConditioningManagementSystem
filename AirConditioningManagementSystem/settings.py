@@ -53,8 +53,8 @@ ROOT_URLCONF = 'AirConditioningManagementSystem.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # 'DIRS': ['frontend/dist'],
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': ['frontend/dist'],
+        # 'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -147,6 +147,6 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, "frontend/dist/static/"),
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "frontend/dist/static/"),
+]

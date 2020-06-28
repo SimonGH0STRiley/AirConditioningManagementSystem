@@ -1,7 +1,7 @@
 from django.db.models import Sum
 from django.shortcuts import render, HttpResponse
 from django.shortcuts import redirect
-
+from django.shortcuts import get_object_or_404
 from . import forms
 from . import models
 
@@ -101,7 +101,8 @@ def managerview(request):
     return render(request, 'backend/managerview.html')
 
 
-def tenantview(request):
+def tenantview(request, room_id):
     if not request.session.get('is_login', None):
         return redirect('/login/')
+    room = get_object_or_404(models.Room, id=room_id)
     return render(request, 'backend/tenantview.html')
