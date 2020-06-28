@@ -1,12 +1,77 @@
 from django.test import TestCase
 from django.utils import timezone
 from .models import Room, TemperatureSensor, Tenant, CentralAirConditioner, ACAdministrator, \
-    RequestRecord, Waiter, ServiceRecord
+    RequestRecord, Waiter, ServiceRecord, Manager
 import datetime
 import time
 
 
 # Create your tests here.
+class ManagerTest(TestCase):
+    current_time = timezone.now()
+    date_in = current_time - datetime.timedelta(days=10)
+    date_out = date_in + datetime.timedelta(days=5)
+    request_record = RequestRecord(
+        room_id='房间一', room_state=1, temp_mode=1,
+        start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=1)
+    )
+    request_record.save()
+
+    request_record = RequestRecord(
+        room_id='房间一', room_state=2, temp_mode=1,
+        start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=2)
+    )
+    request_record.save()
+
+    request_record = RequestRecord(
+        room_id='房间一', room_state=1, temp_mode=1,
+        start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=3)
+    )
+    request_record.save()
+
+    request_record = RequestRecord(
+        room_id='房间一', room_state=0, temp_mode=1,
+        start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=4)
+    )
+    request_record.save()
+
+    request_record = RequestRecord(
+        room_id='房间二', room_state=1, temp_mode=1,
+        start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=1)
+    )
+    request_record.save()
+
+    request_record = RequestRecord(
+        room_id='房间二', room_state=2, temp_mode=1,
+        start_temp=32, target_temp=27, request_time=date_in + datetime.timedelta(minutes=2)
+    )
+    request_record.save()
+    service_record = ServiceRecord(
+        RR_id=1, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
+        end_time=date_in + datetime.timedelta(minutes=2), service_time=datetime.timedelta(minutes=1),
+        power_comsumption=0.00833 * 60, now_temp=32 - 0.5, fee_rate=1.0, fee=0.00833 * 60
+    )
+    service_record.save()
+
+    service_record = ServiceRecord(
+        RR_id=5, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
+        end_time=date_in + datetime.timedelta(minutes=2), service_time=datetime.timedelta(minutes=1),
+        power_comsumption=0.00833 * 60, now_temp=32 - 0.5, fee_rate=1.0, fee=0.00833 * 60
+    )
+    service_record.save()
+
+    service_record = ServiceRecord(
+        RR_id=3, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=3),
+        end_time=date_in + datetime.timedelta(minutes=4), service_time=datetime.timedelta(minutes=1),
+        power_comsumption=0.00833 * 60, now_temp=32 - 0.5 + 0.5 - 0.5, fee_rate=1.0, fee=0.00833 * 60
+    )
+    service_record.save()
+
+    m = Manager(name='manager1', password='none', c_time=current_time)
+    report = m.weeklyReport()
+
+
+'''
 class WaiterTest(TestCase):
     def test_RDR_invoice(self):
         current_time = timezone.now()
@@ -50,21 +115,21 @@ class WaiterTest(TestCase):
 
         service_record = ServiceRecord(
             RR_id=1, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
-            end_time=date_in + datetime.timedelta(minutes=2),
+            end_time=date_in + datetime.timedelta(minutes=2), service_time=datetime.timedelta(minutes=1),
             power_comsumption=0.00833 * 60, now_temp=32 - 0.5, fee_rate=1.0, fee=0.00833 * 60
         )
         service_record.save()
 
         service_record = ServiceRecord(
             RR_id=5, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
-            end_time=date_in + datetime.timedelta(minutes=2),
+            end_time=date_in + datetime.timedelta(minutes=2), service_time=datetime.timedelta(minutes=1),
             power_comsumption=0.00833 * 60, now_temp=32-0.5, fee_rate=1.0, fee=0.00833 * 60
         )
         service_record.save()
 
         service_record = ServiceRecord(
             RR_id=3, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=3),
-            end_time=date_in + datetime.timedelta(minutes=4),
+            end_time=date_in + datetime.timedelta(minutes=4), service_time=datetime.timedelta(minutes=1),
             power_comsumption=0.00833 * 60, now_temp=32 - 0.5 + 0.5-0.5, fee_rate=1.0, fee=0.00833 * 60
         )
         service_record.save()
@@ -76,12 +141,12 @@ class WaiterTest(TestCase):
         expected_detailRecords = [
             dict(
                 RR_id=1, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=1),
-                end_time=date_in + datetime.timedelta(minutes=2), id=1,
+                end_time=date_in + datetime.timedelta(minutes=2), id=1, service_time=datetime.timedelta(minutes=1),
                 power_comsumption=0.00833 * 60, now_temp=31.5, fee_rate=1.0, fee=0.00833 * 60
             ),
             dict(
                 RR_id=3, blow_mode=1, start_time=date_in + datetime.timedelta(minutes=3),
-                end_time=date_in + datetime.timedelta(minutes=4), id=3,
+                end_time=date_in + datetime.timedelta(minutes=4), id=3, service_time=datetime.timedelta(minutes=1),
                 power_comsumption=0.00833 * 60, now_temp=32 - 0.5 + 0.5 - 0.5, fee_rate=1.0, fee=0.00833 * 60
             )
         ]
@@ -96,7 +161,7 @@ class WaiterTest(TestCase):
                              })
 
 
-'''
+
 class ScheduleTests(TestCase):
     def test_schedule_priority(self):
         admin = ACAdministrator()
