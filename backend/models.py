@@ -58,17 +58,6 @@ class Personel(models.Model):
         abstract = True
 
 
-
-class requestQueue(models.Model):
-    room_id = models.CharField('房间号', max_length=64, primary_key=True)
-    room_state = models.SmallIntegerField(choices=room_state_choice, default=2, verbose_name="房间送风状态")
-    temp_mode = models.SmallIntegerField('制冷制热模式', choices=temp_mode_choice, default=1)
-    blow_mode = models.SmallIntegerField('送风模式', choices=blow_mode_choice, default=1)
-    # target_temp = models.IntegerField('目标温度')
-    request_timestamp = models.DateTimeField('请求送风时间戳', auto_now_add=True)
-    air_timestamp = models.DateTimeField('开始送风时间戳', null=True)
-    service_duration = models.IntegerField('当前服务时长(秒)', default=0)
-
 class ACAdministrator(Personel):
     def __str__(self):
         return self.name
@@ -78,8 +67,10 @@ class ACAdministrator(Personel):
         central_air_conditioner.ac_state = 'set_mode'
         central_air_conditioner.save()
 
-    def setpara(self, temp_mode=None, cool_temp_highlimit=None, cool_temp_lowlimit=None, heat_temp_highlimit=None, heat_temp_lowlimit=None, \
-        default_targettemp=None, feerate_h=None, feerate_m=None, feerate_l=None, max_load=None, waiting_duration=None):
+    def setpara(self, temp_mode=None, cool_temp_highlimit=None, cool_temp_lowlimit=None, heat_temp_highlimit=None,
+                heat_temp_lowlimit=None, \
+                default_targettemp=None, feerate_h=None, feerate_m=None, feerate_l=None, max_load=None,
+                waiting_duration=None):
         central_air_conditioner = CentralAirConditioner.objects.all()[0]
         if central_air_conditioner.ac_state == 'set_mode':
             if temp_mode is not None:
@@ -134,11 +125,12 @@ class Waiter(Personel):
         verbose_name_plural = "前台服务员"  # 复数形式
 
     def printRDR(self, room_id, date_in, date_out):
-        records = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out))
+        records = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out)).values()
         return records
 
     def printInvoice(self, room_id, date_in, date_out):
-        total_fee = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out)).aggregate(Sum("fee")).get('fee__sum')
+        total_fee = ServiceRecord.objects.filter(RR__room_id=room_id, start_time__range=(date_in, date_out)).aggregate(
+            Sum("fee")).get('fee__sum')
         invoice = {
             "room_id": room_id,
             "total_fee": total_fee,
@@ -252,15 +244,15 @@ class Room(models.Model):
         old_air_request.delete()
 
     def auto_ajust_temp(self):
-        if self.room_state == 1:  
+        if self.room_state == 1:
             # 达到目标温度，取消送风
             if (self.temp_mode == 1 and self.current_temp <= self.target_temp + eps) or \
-                (self.temp_mode == -1 and self.current_temp >= self.target_temp - eps):
+                    (self.temp_mode == -1 and self.current_temp >= self.target_temp - eps):
                 self.cancelAir()
         elif self.room_state == 2:
             # 偏离目标温度一度，请求送风
             if (self.temp_mode == 1 and self.current_temp >= self.target_temp + 1 - eps) or \
-                (self.temp_mode == -1 and self.current_temp <= self.target_temp - 1 + eps):
+                    (self.temp_mode == -1 and self.current_temp <= self.target_temp - 1 + eps):
                 self.requestAir()
 
 
@@ -280,14 +272,15 @@ class CentralAirConditioner(models.Model):
     heat_temp_highlimit = models.IntegerField('制热温控范围最高温', default=30)
     heat_temp_lowlimit = models.IntegerField('制热温控范围最低温', default=25)
     default_temp = models.IntegerField('缺省温度', default=25)
-    feerate_H = models.FloatField('高风费率', default=1.0/60)
-    feerate_M = models.FloatField('中风费率', default=0.5/60)
-    feerate_L = models.FloatField('低风费率', default=1.0/180)
+    feerate_H = models.FloatField('高风费率', default=1.0 / 60)
+    feerate_M = models.FloatField('中风费率', default=0.5 / 60)
+    feerate_L = models.FloatField('低风费率', default=1.0 / 180)
     max_load = models.IntegerField('最大带机量', default=3)
     waiting_duration = models.IntegerField(default=120)
 
     def billing(self):
         pass
+
     # 需要每秒钟运行
     def schedule(self):
 
@@ -300,7 +293,6 @@ class CentralAirConditioner(models.Model):
             satisfy_request.air_timestamp = timezone.now()  # 送风开始时间
             satisfy_request.save()
 
-
         def cancel_air(weaker_request):
             weaker_room = Room.objects.get(pk=weaker_request.room_id)
             weaker_room.room_state = 2
@@ -311,7 +303,6 @@ class CentralAirConditioner(models.Model):
             weaker_request.save()
             # 待补充：在别的地方记录送风结束时间
 
-
         all_rooms = Room.objects.all()
         all_requests = requestQueue.objects.all()
         current_request_cnt = len(all_requests)
@@ -320,22 +311,21 @@ class CentralAirConditioner(models.Model):
         current_load = len(serving_request)
 
         # 更新服务时间
-        serving_request.update(service_duration=F('service_duration')+1)
-
+        serving_request.update(service_duration=F('service_duration') + 1)
 
         # 全部送风请求都已满足，不需要调度
         if len(waiting_request) == 0:
-            return 
+            return
 
         for satisfy_request in waiting_request:
             # 尚未超过负载能力，满足送风请求
-            if requestQueue.objects.all().filter(room_state=1).count() < self.max_load:            
+            if requestQueue.objects.all().filter(room_state=1).count() < self.max_load:
                 #  与设定制冷制热模式一致
                 if satisfy_request.temp_mode == self.temp_mode:
                     send_air(satisfy_request)
-                    
-                    
-            else: #  超过负载能力，需要进行调度
+
+
+            else:  # 超过负载能力，需要进行调度
                 current_time = timezone.now()
                 serving_request = requestQueue.objects.all().filter(room_state=1)
                 weaker_request = serving_request.filter(blow_mode__lt=satisfy_request.blow_mode)
@@ -344,8 +334,11 @@ class CentralAirConditioner(models.Model):
                     cancel_air(weaker_request)
                     send_air(satisfy_request)
                 else:
-                    equal_request = serving_request.filter(blow_mode=satisfy_request.blow_mode).order_by('-service_duration')                    
-                    if len(equal_request) > 0 and satisfy_request.request_timestamp <= current_time - datetime.timedelta(seconds=self.waiting_duration):  # 时间片调度
+                    equal_request = serving_request.filter(blow_mode=satisfy_request.blow_mode).order_by(
+                        '-service_duration')
+                    if len(
+                            equal_request) > 0 and satisfy_request.request_timestamp <= current_time - datetime.timedelta(
+                            seconds=self.waiting_duration):  # 时间片调度
                         equal_request = equal_request[0]  # 关掉服务时间最长的
                         cancel_air(weaker_request)
                         send_air(satisfy_request)
@@ -366,6 +359,6 @@ class ServiceRecord(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     power_comsumption = models.FloatField('用电度数')
-    ntemp = models.IntegerField('当前温度')
+    now_temp = models.FloatField('当前温度')
     fee_rate = models.FloatField('费率', choices=feerate_choice, default=2)
     fee = models.FloatField()
