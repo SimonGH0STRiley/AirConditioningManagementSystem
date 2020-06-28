@@ -160,9 +160,6 @@ class Manager(Personel):
         verbose_name_plural = "酒店经理"  # 复数形式
 
     def dailyReport(self, date_start, date_end):
-        room_fee = []
-        detail_record = []
-
         basic_room_info = RoomDailyReport.objects.filter(date__range=(date_start.date(), date_end.date())).\
             values('room_id', 'date', 'switch_count', 'schedule_count', 'change_temp_count', 'change_speed_count')
 
@@ -194,15 +191,101 @@ class Manager(Personel):
 
         return basic_room_info
 
+    def weeklyReport(self, date_start, date_end):
+        basic_room_info = RoomDailyReport.objects.filter(date__week__range=(date_start.week(), date_end.week())).\
+            values('room_id', 'date', 'switch_count', 'schedule_count', 'change_temp_count', 'change_speed_count')
 
-    def weeklyReport(self):
-        pass
+        for i in range((date_end - date_start).weeks + 1):
+            date = date_start + datetime.timedelta(weeks=i)
+            day_service_items = ServiceRecord.objects.filter(start_time__week=date.week()).values('RR__room_id'). \
+                annotate(Sum('service_time')).values('RR__room_id', 'service_time__sum')
 
-    def monthlyReport(self):
-        pass
+            for k in day_service_items:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['service_time__sum'] = k['service_time__sum']
+
+            day_room_fee = ServiceRecord.objects.filter(start_time__week=date.week()).values('RR__room_id'). \
+                annotate(Sum('fee')).values('RR__room_id', 'fee__sum')
+
+            for k in day_room_fee:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['fee__sum'] = k['fee__sum']
+
+            day_detail_record = ServiceRecord.objects.filter(start_time__week=date.week()).values('RR__room_id'). \
+                annotate(detail_record_count=Count('RR__room_id')).values('RR__room_id', 'detail_record_count')
+
+            for k in day_detail_record:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['detail_record_count'] = k['detail_record_count']
+
+        return basic_room_info
+
+    def monthlyReport(self, date_start, date_end):
+        basic_room_info = RoomDailyReport.objects.filter(date__month__range=(date_start.month(), date_end.month())). \
+            values('room_id', 'date', 'switch_count', 'schedule_count', 'change_temp_count', 'change_speed_count')
+
+        for i in range((date_end - date_start).weeks + 1):
+            date = date_start + datetime.timedelta(months=i)
+            day_service_items = ServiceRecord.objects.filter(start_time__month=date.month()).values('RR__room_id'). \
+                annotate(Sum('service_time')).values('RR__room_id', 'service_time__sum')
+
+            for k in day_service_items:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['service_time__sum'] = k['service_time__sum']
+
+            day_room_fee = ServiceRecord.objects.filter(start_time__month=date.month()).values('RR__room_id'). \
+                annotate(Sum('fee')).values('RR__room_id', 'fee__sum')
+
+            for k in day_room_fee:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['fee__sum'] = k['fee__sum']
+
+            day_detail_record = ServiceRecord.objects.filter(start_time__month=date.month()).values('RR__room_id'). \
+                annotate(detail_record_count=Count('RR__room_id')).values('RR__room_id', 'detail_record_count')
+
+            for k in day_detail_record:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['detail_record_count'] = k['detail_record_count']
+
+        return basic_room_info
 
     def yearlyReport(self):
-        pass
+        basic_room_info = RoomDailyReport.objects.filter(date__year__range=(date_start.year(), date_end.year())). \
+            values('room_id', 'date', 'switch_count', 'schedule_count', 'change_temp_count', 'change_speed_count')
+
+        for i in range((date_end - date_start).weeks + 1):
+            date = date_start + datetime.timedelta(years=i)
+            day_service_items = ServiceRecord.objects.filter(start_time__year=date.year()).values('RR__room_id'). \
+                annotate(Sum('service_time')).values('RR__room_id', 'service_time__sum')
+
+            for k in day_service_items:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['service_time__sum'] = k['service_time__sum']
+
+            day_room_fee = ServiceRecord.objects.filter(start_time__year=date.year()).values('RR__room_id'). \
+                annotate(Sum('fee')).values('RR__room_id', 'fee__sum')
+
+            for k in day_room_fee:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['fee__sum'] = k['fee__sum']
+
+            day_detail_record = ServiceRecord.objects.filter(start_time__year=date.year()).values('RR__room_id'). \
+                annotate(detail_record_count=Count('RR__room_id')).values('RR__room_id', 'detail_record_count')
+
+            for k in day_detail_record:
+                for j in basic_room_info:
+                    if j['date'] == date.date() and j['room_id'] == k['RR__room_id']:
+                        j['detail_record_count'] = k['detail_record_count']
+
+        return basic_room_info
 
 
 class Tenant(models.Model):
