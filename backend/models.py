@@ -181,19 +181,45 @@ class Tenant(models.Model):
         room.room_state = 2  # 开机后，房间空调处于待机状态，若中央空调能送风才处于工作状态
         room.switch_count += 1
         room.save()
+        room_daily_report = RoomDailyReport.objects.filter(room_id=self.room_id, date=datetime.date.today())
+        if room_daily_report.count() == 0:
+            room_daily_report = RoomDailyReport(room_id=self.room_id)
+        else:
+            room_daily_report = room_daily_report[0]
+        room_daily_report.switch_count += 1
+        room_daily_report.save()
         room.requestAir()
 
     def changeTargetTemp(self, target_temp):
         room = Room.objects.get(pk=self.room_id)
         room.target_temp = target_temp
+        # room.change_temp_count += 1
         room.save()
+
+        room_daily_report = RoomDailyReport.objects.filter(room_id=self.room_id, date=datetime.date.today())
+        if room_daily_report.count() == 0:
+            room_daily_report = RoomDailyReport(room_id=self.room_id)
+        else:
+            room_daily_report = room_daily_report[0]
+        room_daily_report.change_temp_count += 1
+        room_daily_report.save()
+
         room.cancelAir()
         room.requestAir()
 
     def changeFanSpeed(self, fan_speed):
         room = Room.objects.get(pk=self.room_id)
         room.blow_mode = fan_speed
+        # room.change_speed_count += 1    
         room.save()
+        room_daily_report = RoomDailyReport.objects.filter(room_id=self.room_id, date=datetime.date.today())
+        if room_daily_report.count() == 0:
+            room_daily_report = RoomDailyReport(room_id=self.room_id)
+        else:
+            room_daily_report = room_daily_report[0]
+        room_daily_report.change_speed_count += 1
+        room_daily_report.save()
+
         room.cancelAir()
         room.requestAir()
 
@@ -231,6 +257,14 @@ class TemperatureSensor(models.Model):
             self.current_temp -= temp_change_direction * delta_temp_change
         self.last_update = current_time
 
+class RoomDailyReport(models.Model):
+    room_id = models.CharField('房间号', max_length=64)
+    date = models.DateField('日期', auto_now=True)
+    switch_count = models.IntegerField('开关次数', default=0)
+    schedule_count = models.IntegerField('被调度次数', default=0)
+    change_temp_count = models.IntegerField('调温次数', default=0)
+    change_speed_count = models.IntegerField('调风次数', default=0)
+
 
 class Room(models.Model):
     room_id = models.CharField(
@@ -246,8 +280,7 @@ class Room(models.Model):
     # fee_rate = models.FloatField('费率')
     fee = models.FloatField('总费用')
     duration = models.IntegerField('服务时长(秒)')
-    switch_count = models.IntegerField('开关次数', default=0)
-    schedule_count = models.IntegerField('被调度次数', default=0)
+
 
     def requestAir(self):
         new_air_request = requestQueue(self.room_id, self.room_state, self.temp_mode, self.blow_mode)
@@ -331,8 +364,15 @@ class CentralAirConditioner(models.Model):
         def cancel_air(weaker_request):
             weaker_room = Room.objects.get(pk=weaker_request.room_id)
             weaker_room.room_state = 2
-            weaker_room.schedule_count += 1
+            # weaker_room.schedule_count += 1
             weaker_room.save()
+            room_daily_report = RoomDailyReport.objects.filter(room_id=weaker_request.room_id, date=datetime.date.today())
+            if room_daily_report.count() == 0:
+                room_daily_report = RoomDailyReport(room_id=self.room_id)
+            else:
+                room_daily_report = room_daily_report[0]
+            room_daily_report.schedule_count += 1
+            room_daily_report.save()
 
             weaker_request.room_state = 2  # 停止送风
             weaker_request.request_timestamp = timezone.now()  # 重新计时
