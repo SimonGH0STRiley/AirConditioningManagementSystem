@@ -24,11 +24,16 @@
                     <div class="row" v-if="currentRoom.AC.isACActive">
                         <div class="col-lg-2 col-lg-offset-2 col-md-4 col-xs-6">房间空调设置</div>
                         <div class="col-lg-4 col-lg-offset-2 col-md-4 col-md-offset-4 col-xs-6" style="text-align: right">
-                            设置温度：{{ currentRoom.AC.targetTemperature }}
-                            设置风速： {{ currentRoom.AC.targetSpeed }}
+                            房客设置温度：{{ currentRoom.AC.targetTemperature }}
+                            房客设置风速： {{ currentRoom.AC.targetSpeed }}
                         </div>
                     </div>
-                    <b-button>打印当前房间报表</b-button>
+                    <b-button-group>
+                        <b-button @click="changeReportDuration('daily')">Daily</b-button>
+                        <b-button @click="changeReportDuration('monthly')">Monthly</b-button>
+                        <b-button @click="changeReportDuration('annually')">Annually</b-button>
+                    </b-button-group>
+                    <b-button @click="printReport">打印当前房间报表</b-button>
                 </div>
             </div>
         </div>
@@ -39,6 +44,11 @@
     export default {
         name: "RoomDetailForManager",
         props: ["currentRoom"],
+        data() {
+            return {
+                reportDuration: 'daily'
+            }
+        },
         computed: {
             readyType: function() {
                 if(!this.currentRoom.isActive) {
@@ -50,6 +60,20 @@
                         return "空调未使用";
                     }
                 }
+            }
+        },
+        methods: {
+            printReport () {
+                if (this.reportDuration === 'daily') {
+                    //TODO: daily report
+                } else  if (this.reportDuration === 'monthly') {
+                    //TODO: monthly report
+                } else if (this.reportDuration === 'annually') {
+                    //TODO: annually report
+                }
+            },
+            changeReportDuration (newDuration) {
+                this.reportDuration = newDuration;
             }
         }
     };

@@ -1,22 +1,18 @@
 <template>
     <div id="app">
         <Login></Login>
-        <Tenant></Tenant>
     </div>
 </template>
 
 <script>
     import Login from "./components/Login";
-    import Tenant from "./components/Tenant/Tenant";
-    import Administrator from "./components/Administrator/Administrator";
-    import Manager from "./components/Manager/Manager";
     import roomAPI from "../api/roomAPI";
+    import router from "./router/index"
 
     export default {
         name: 'app',
         components: {
             Login,
-            Tenant
         },
         data() {
             let rooms = roomAPI.getRoomList();

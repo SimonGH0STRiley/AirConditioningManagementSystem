@@ -5,7 +5,7 @@
                 <b-input-group>
                     <b-form-input placeholder="请输入用户名" required autofocus v-model="loginForm.username"></b-form-input>
                     <b-input-group-append>
-                        <b-button variant="outline-warning">清除</b-button>
+                        <b-button variant="outline-warning" @click="clearUsername">清除</b-button>
                     </b-input-group-append>
                 </b-input-group>
             </div>
@@ -13,15 +13,15 @@
             <div class="row">
                 <b-input-group>
                     <b-form-input type="password" placeholder="请输入密码" required v-model="loginForm.password"></b-form-input>
-                    <b-input-group-append>
+<!--                    <b-input-group-append>
                         <b-button variant="outline-info">查看</b-button>
-                    </b-input-group-append>
+                    </b-input-group-append>-->
                 </b-input-group>
             </div>
             <p></p>
-            <div class="row">
+<!--            <div class="row">
                 <b-checkbox class=" mb-3" value="remember-me">Remember me</b-checkbox>
-            </div>
+            </div>-->
             <div class="row">
                 <b-button variant="outline-primary" class="col-lg-2 offset-lg-5" @click="login">登陆</b-button>
             </div>
@@ -62,6 +62,9 @@
                         console.log(error);
                     });
                 }
+            },
+            clearUsername () {
+                this.LoginForm.username = '';
             }
         }
     }

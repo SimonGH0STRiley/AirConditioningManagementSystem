@@ -13,22 +13,27 @@
                 </div>
             </div>
         </b-row>
-
+        <room-detail-for-manager :currentDevice="currentRoom" v-if="currentRoom"></room-detail-for-manager>
     </b-container>
 </template>
 
 <script>
     import Room from "../Room/Room";
+    import RoomDetailForManager from "./RoomDetailForManager";
     import roomAPI from "../../../api/roomAPI";
+
 
     export default {
         name: "Manager",
         components: {
-            Room
+            Room,
+            RoomDetailForManager
         },
         props:["roomList"],
         data() {
-            return null;
+            return {
+                currentRoom: null
+            }
         },
         computed: {
             roomActiveNumber: function() {
