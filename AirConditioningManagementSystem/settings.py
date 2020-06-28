@@ -72,22 +72,22 @@ WSGI_APPLICATION = 'AirConditioningManagementSystem.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'AirConditioningManagementSystem',
-#         'USER': 'root',
-#         'PASSWORD': 'some_pass',
-#         'HOST': '103.105.49.174',
-#         'PORT': 3306,
-#         'OPTIONS': {'charset': 'utf8mb4'},
-#         'TEST': {
-#             'NAME': 'test_AirConditioningManagementSystem',
-#             'CHARSET': 'utf8mb4',
-#         },
-#     }
-# }
-
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'AirConditioningManagementSystem',
+        'USER': 'root',
+        'PASSWORD': 'some_pass',
+        'HOST': '103.105.49.174',
+        'PORT': 3306,
+        'OPTIONS': {'charset': 'utf8mb4'},
+        'TEST': {
+            'NAME': 'test_AirConditioningManagementSystem',
+            'CHARSET': 'utf8mb4',
+        },
+    }
+}
+'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -103,7 +103,7 @@ DATABASES = {
         },
     }
 }
-'''
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
