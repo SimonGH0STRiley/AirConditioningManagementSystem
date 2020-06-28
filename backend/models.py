@@ -415,7 +415,7 @@ class Room(models.Model):
 
 
     def requestAir(self):
-        if requestQueue.objects.all().filter(room_id=self.room_id, )
+        # if requestQueue.objects.all().filter(room_id=self.room_id, )
         new_air_request = requestQueue(self.room_id, self.room_state, self.temp_mode, self.blow_mode)
         new_air_request.save()
         new_request_record = RequestRecord(  # 创建请求记录
