@@ -4,10 +4,10 @@ import Vue from 'vue'
 import './plugins/bootstrap-vue'
 import { BootstrapVue, BootstrapVueIcons } from 'bootstrap-vue'
 import App from './App.vue'
-import roomAPI from "../api/roomAPI";
+// import roomAPI from "../api/roomAPI";
 
-roomAPI.setUpdateMode('websocket');
-roomAPI.initialList();
+// roomAPI.setUpdateMode('websocket');
+// roomAPI.initialList();
 
 Vue.config.productionTip = false;
 Vue.use(BootstrapVue)

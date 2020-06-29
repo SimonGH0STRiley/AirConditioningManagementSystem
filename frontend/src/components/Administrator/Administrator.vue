@@ -4,16 +4,17 @@
             <div>开启房间数量: {{ roomActiveNumber }}</div>
             <div>空调开启房间数量: {{ ACActiveNumber }}</div>
         </b-row>
-        <b-row v-for="col in 8" :key="col">
-            <div v-for="row in 16" :key="row">
+        <b-row v-for="col in 16" :key="col">
+            <div v-for="row in 8" :key="row">
                 <div @click="getCurrentRoom(col, row)"
                      data-toggle="modal"
-                     data-target="#roomInfo">
-                    <Room :room="roomList[(col - 1) * 16 + (row - 1)]"></Room>
+                     data-target="#room-detail-for-admin"
+                     v-b-modal.room-detail-for-admin>
+                    <Room :room="roomList[(col - 1) * 8 + (row - 1)]"></Room>
                 </div>
             </div>
         </b-row>
-        <room-detail-for-admin :currentDevice="currentRoom" v-if="currentRoom"></room-detail-for-admin>
+        <room-detail-for-admin :currentRoom="currentRoom" v-if="currentRoom"></room-detail-for-admin>
     </b-container>
 </template>
 
@@ -38,7 +39,7 @@
             roomActiveNumber: function() {
                 let count = 0;
                 this.roomList.forEach(room => {
-                    count = room.isACActive ? count + 1 : count;
+                    count = room.isActive ? count + 1 : count;
                 });
                 return count;
             },
@@ -52,7 +53,7 @@
         },
         methods: {
             getCurrentRoom: function(col, row) {
-                this.currentRoom = this.roomList[(col - 1) * 16 + (row - 1)];
+                this.currentRoom = this.roomList[(col - 1) * 8 + (row - 1)];
                 console.log(this.currentRoom);
                 return(this.currentRoom);
             }

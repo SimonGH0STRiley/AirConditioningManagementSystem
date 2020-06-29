@@ -1,34 +1,44 @@
 <template>
     <b-container>
-        <b-col md="6" class="mb-3">
-            <b-button pill variant="outline-light">
-                <b-iconstack id="ac-power" :variant="buttonStyle">
-                    <b-icon stacked icon="circle" ></b-icon>
-                    <b-icon stacked icon="power" scale="0.75"></b-icon>
-                </b-iconstack>
-            </b-button>
-        </b-col>
-        <b-col md="6">
-            <p>温度：{{ room.AC.targetTemperature }}</p>
-            <p>
-                <button type="button" class="btn btn-default" @mousedown="temperatureChangeHandler('-')" @mouseup="clearMouseTimeout">
-                    <span class="glyphicon glyphicon-chevron-left"></span>
-                </button>
-                <button type="button" class="btn btn-default" @mousedown="temperatureChangeHandler('+')" @mouseup="clearMouseTimeout">
-                    <span class="glyphicon glyphicon-chevron-right"></span>
-                </button>
-            </p>
-            <p></p>
-            <p>风俗：{{ room.AC.targetSpeed }}</p>
-            <p>
-                <button type="button" class="btn btn-default" @mousedown="speedChangeHandler('-')" @mouseup="clearMouseTimeout">
-                    <span class="glyphicon glyphicon-chevron-left"></span>
-                </button>
-                <button type="button" class="btn btn-default" @mousedown="speedChangeHandler('+')" @mouseup="clearMouseTimeout">
-                    <span class="glyphicon glyphicon-chevron-right"></span>
-                </button>
-            </p>
-        </b-col>
+        <b-row>
+            <b-col class="col-lg-8">
+                <b-button pill variant="outline-light">
+                    <b-iconstack id="ac-power" :variant="buttonStyle">
+                        <b-icon stacked icon="circle" ></b-icon>
+                        <b-icon stacked icon="power" scale="0.75"></b-icon>
+                    </b-iconstack>
+                </b-button>
+            </b-col>
+            <b-col class="col-lg-4">
+                <b-row>
+                    <div>温度：{{ room.AC.targetTemperature }}      </div>
+                </b-row>
+                <b-row>
+                    <b-button-group>
+                        <b-button size="md" class="h2 mb-2" variant="outline-primary" @mousedown="temperatureChangeHandler('-')" @mouseup="clearMouseTimeout">
+                            <b-icon icon="arrow-left" aria-hidden="true"></b-icon>
+                        </b-button>
+                        <b-button size="md" class="h2 mb-2" variant="outline-primary" @mousedown="temperatureChangeHandler('+')" @mouseup="clearMouseTimeout">
+                            <b-icon icon="arrow-right" aria-hidden="true"></b-icon>
+                        </b-button>
+                    </b-button-group>
+                </b-row>
+                <p></p>
+                <b-row>
+                    <div>风速：{{ room.AC.targetSpeed }}     </div>
+                </b-row>
+                <b-row>
+                    <b-button-group>
+                        <b-button size="md" class="h2 mb-2" variant="outline-primary" @mousedown="speedChangeHandler('-')" @mouseup="clearMouseTimeout">
+                            <b-icon icon="arrow-left" aria-hidden="true"></b-icon>
+                        </b-button>
+                        <b-button size="md" class="h2 mb-2" variant="outline-primary" @mousedown="temperatureChangeHandler('+')" @mouseup="clearMouseTimeout">
+                            <b-icon icon="arrow-right" aria-hidden="true"></b-icon>
+                        </b-button>
+                    </b-button-group>
+                </b-row>
+            </b-col>
+        </b-row>
     </b-container>
 </template>
 
