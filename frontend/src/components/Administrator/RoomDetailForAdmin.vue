@@ -1,5 +1,5 @@
 <template>
-    <div class="modal fade" id="roomInfo" tabindex="-1" role="dialog" aria-labelledby="roomInfoLabel">
+    <b-modal class="modal fade" id="room-detail-for-admin" tabindex="-1" role="dialog" aria-labelledby="roomInfoLabel">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -9,23 +9,38 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-lg-2 col-lg-offset-2 col-md-3 col-xs-3">
-                            房间号：#{{ currentRoom.roomNumber }}
-                            房间是否入住：{{ currentRoom.isActive }}
+                        <div class="col-lg-12 col-md-12 col-xs-12">
+                            <b-row>
+                                <b-col lg="6">
+                                    房间号：#{{ currentRoom.roomNumber + 1 }}
+                                </b-col>
+                                <b-col lg="6">
+                                    房间是否入住：{{ currentRoom.isActive }}
+                                </b-col>
+                            </b-row>
+                            <b-row>
+                                <b-col lg="6">
+                                    房间当前温度：{{ currentRoom.currentTemperature }}℃
+                                </b-col>
+                                <b-col lg="6">
+                                    {{ readyType }}
+                                </b-col>
+                            </b-row>
                         </div>
-                        <div class="col-lg-2 col-lg-offset-1 col-md-2 col-xs-2" style="text-align: center">
-                            房间当前温度：{{ currentRoom.currentTemperature }}℃
-                        </div>
-                        <div class="col-lg-1 col-md-2 col-xs-2">
-                            <div :class="{'glyphicon glyphicon-fan' :currentRoom.AC.isACActive}" style="min-width:15px;"></div>
-                        </div>
-                        <div class="col-lg-2 col-md-5 col-xs-5" style="text-align: right">{{ readyType }}</div>
                     </div>
                     <div class="row" v-if="currentRoom.AC.isACActive">
-                        <div class="col-lg-2 col-lg-offset-2 col-md-4 col-xs-6">房间空调设置</div>
-                        <div class="col-lg-4 col-lg-offset-2 col-md-4 col-md-offset-4 col-xs-6" style="text-align: right">
-                            房客设置温度：{{ currentRoom.AC.targetTemperature }}
-                            房客设置风速： {{ currentRoom.AC.targetSpeed }}
+                        <div class="col-lg-12 col-lg-offset-0 col-md-12 col-xs-12">
+                            <b-row>
+                                <b-col lg="2">
+                                    AC:
+                                </b-col>
+                                <b-col lg="5">
+                                    房客设置温度：{{ currentRoom.AC.targetTemperature }}
+                                </b-col>
+                                <b-col lg="5">
+                                    房客设置风速： {{ currentRoom.AC.targetSpeed }}
+                                </b-col>
+                            </b-row>
                         </div>
                     </div>
                     <b-form-checkbox v-model="ACPower" name="check-button" switch @click="switchACPower">
@@ -46,7 +61,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </b-modal>
 </template>
 
 <script>

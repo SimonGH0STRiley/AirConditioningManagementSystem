@@ -1,16 +1,20 @@
 <template>
     <b-container>
         <b-row class="header">
-            <div>开启房间数量: {{ roomActiveNumber }}</div>
-            <div>空调开启房间数量: {{ ACActiveNumber }}</div>
+            <b-col lg="3" offset-lg="3">
+                开启房间数量: {{ roomActiveNumber }}
+            </b-col>
+            <b-col lg="3" offset-lg="1">
+                空调开启房间数量: {{ ACActiveNumber }}
+            </b-col>
         </b-row>
-        <b-row v-for="col in 16" :key="col">
-            <div v-for="row in 8" :key="row">
+        <b-row v-for="col in 26" :key="col">
+            <div v-for="row in 5" :key="row">
                 <div @click="getCurrentRoom(col, row)"
                      data-toggle="modal"
                      data-target="#room-detail-for-admin"
                      v-b-modal.room-detail-for-admin>
-                    <Room :room="roomList[(col - 1) * 8 + (row - 1)]"></Room>
+                    <Room :room="roomList[(col - 1) * 5 + (row - 1)]"></Room>
                 </div>
             </div>
         </b-row>
@@ -53,7 +57,7 @@
         },
         methods: {
             getCurrentRoom: function(col, row) {
-                this.currentRoom = this.roomList[(col - 1) * 8 + (row - 1)];
+                this.currentRoom = this.roomList[(col - 1) * 5 + (row - 1)];
                 console.log(this.currentRoom);
                 return(this.currentRoom);
             }

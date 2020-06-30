@@ -1,6 +1,6 @@
 <template>
     <div class="room-info" v-bind:class="{'inactive': room.isActive===false}">
-        <div style="min-width: 25px">#{{ room.roomNumber }}</div>
+        <div style="min-width: 25px">#{{ room.roomNumber + 1 }}</div>
         <div>_{{ room.currentTemperature }}℃</div>
         <div :class="{'glyphicon glyphicon-fan':(room.isActive && room.AC.isACActive)}"
              style="min-width: 15px"></div>

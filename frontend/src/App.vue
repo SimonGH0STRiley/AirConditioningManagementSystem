@@ -1,5 +1,7 @@
 <template>
     <div id="app">
+        <!--<login></login>-->
+        <!--<Tenant :room="roomList[0]"></Tenant>-->
         <Administrator :roomList="roomList"></Administrator>
     </div>
 </template>
