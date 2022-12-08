@@ -7,7 +7,7 @@ attrs==19.1.0
 autobahn==19.8.1
 Automat==0.7.0
 autopep8==1.4.4
-certifi==2019.6.16
+certifi==2022.12.7
 cffi==1.12.3
 channels==2.2.0
 channels-redis==2.4.0
